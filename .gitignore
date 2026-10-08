@@ -1,0 +1,14 @@
+# Builds de Gradle
+.gradle/
+build/
+**/build/
+
+# Local
+local.properties
+
+# IDE / Kotlin
+.idea/
+*.iml
+.kotlin/
+captures/
+.externalNativeBuild/

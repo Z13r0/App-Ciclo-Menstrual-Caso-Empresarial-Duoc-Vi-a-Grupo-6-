@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema XML mínimo: la interfaz real se dibuja con Compose (MyCicloTheme) -->
+    <style name="Theme.MyCiclo" parent="android:Theme.Material.Light.NoActionBar" />
+    <color name="ic_launcher_background">#8E3B6E</color>
+</resources>

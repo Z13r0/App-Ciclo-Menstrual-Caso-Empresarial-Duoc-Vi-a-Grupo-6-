@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Guía 13: foto temporal de la cámara y copia definitiva en almacenamiento interno -->
+    <cache-path name="imagenes_cache" path="images/" />
+    <files-path name="imagenes_files" path="images/" />
+</paths>
