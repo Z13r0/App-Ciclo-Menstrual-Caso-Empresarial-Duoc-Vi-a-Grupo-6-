@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.myciclo.app.data.AppDatabase
 import com.myciclo.app.registro.Nivel
+import com.myciclo.app.registro.RegistroEntity
 import com.myciclo.app.registro.RegistroRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,8 +15,11 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 // lo que necesita la pantalla del calendario
+// dias es solo el color de cada celda y detalles es el registro completo
+// los separamos porque pintar el mes necesita poco y el dialogo necesita todo
 data class CalendarioEstado(
     val dias: Map<LocalDate, Nivel> = emptyMap(),
+    val detalles: Map<LocalDate, RegistroEntity> = emptyMap(),
     val ventana: Ventana? = null,
     val diaCiclo: Int? = null
 )
@@ -35,6 +39,9 @@ class CalendarioViewModel(app: Application) : AndroidViewModel(app) {
                 val inicioCiclo = LocalDate.parse(lista.first().inicioPeriodo)
                 CalendarioEstado(
                     dias = dias.associate { it.fecha to it.nivel },
+                    // guardamos el registro entero con la fecha como llave
+                    // asi el dialogo lo busca al instante sin volver a consultar room
+                    detalles = lista.associateBy { LocalDate.parse(it.fecha) },
                     ventana = calcularVentana(dias, inicioCiclo),
                     diaCiclo = ChronoUnit.DAYS.between(inicioCiclo, LocalDate.now()).toInt() + 1
                 )
