@@ -72,6 +72,13 @@ fun CalendarioScreen(vm: CalendarioViewModel = viewModel()) {
             text = if (estado.diaCiclo != null) "Día ${estado.diaCiclo} del ciclo" else "Aún no hay registros",
             style = MaterialTheme.typography.headlineSmall
         )
+
+        // fase estimada, la calcula faseDelCiclo que esta en FaseCiclo.kt
+        val fase = estado.fase
+        if (fase != null) {
+            Text(fase.texto, style = MaterialTheme.typography.titleMedium)
+        }
+
         val ventana = estado.ventana
         if (ventana != null) {
             Text("Ventana EVA: ${ventana.inicio.format(formatoCorto)} al ${ventana.fin.format(formatoCorto)}")
