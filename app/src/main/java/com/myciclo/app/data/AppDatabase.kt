@@ -8,7 +8,8 @@ import com.myciclo.app.registro.RegistroDao
 import com.myciclo.app.registro.RegistroEntity
 
 // base de datos local, aca queda todo el diario y no sale del celular
-@Database(entities = [RegistroEntity::class], version = 1, exportSchema = false)
+// version 2: le agregamos la columna foto a la tabla registros
+@Database(entities = [RegistroEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun registroDao(): RegistroDao
@@ -23,7 +24,11 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "myciclo.db"
-                ).build()
+                )
+                    // al subir de version room borra y crea la tabla de nuevo
+                    // lo dejamos asi porque es un prototipo y los datos son de prueba
+                    .fallbackToDestructiveMigration()
+                    .build()
             }
             return instancia!!
         }
