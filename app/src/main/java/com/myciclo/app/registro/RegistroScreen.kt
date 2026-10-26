@@ -13,23 +13,29 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -41,20 +47,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.myciclo.app.ui.componentes.AvisoEva
+import com.myciclo.app.ui.theme.EvaAltoColor
+import com.myciclo.app.ui.theme.EvaMedioColor
+import com.myciclo.app.ui.theme.EvaNuloColor
 import java.time.LocalDate
 import kotlinx.coroutines.delay
 
 /**
  * Pantalla de registro diario de observaciones EVA.
- * - Formulario para el día actual (o edición de un día anterior).
- * - Lista de historial con opción de editar y borrar.
- * - Foto opcional del patrón (cámara o galería) guardada solo dentro de la app.
+ * Diseñada con Material 3 para brindar una experiencia visual limpia y atractiva.
  */
 @Composable
 fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
@@ -94,7 +103,6 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
         }
     }
 
-    // Cargar un registro existente en el formulario para editarlo
     fun cargarParaEditar(reg: RegistroEntity) {
         fecha = reg.fecha
         inicioPeriodo = reg.inicioPeriodo
@@ -115,7 +123,6 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
 
     val puedeGuardar = nivel != null && inicioPeriodo.isNotBlank()
 
-    // Limpiar el mensaje después de unos segundos
     LaunchedEffect(mensaje) {
         if (mensaje.isNotEmpty()) {
             delay(2500)
@@ -126,116 +133,164 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            if (editando) "Editar registro" else "Registrar observación EVA",
-            style = MaterialTheme.typography.headlineSmall
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        // ---------- FORMULARIO ----------
-        Column(
-            modifier = Modifier
-                .weight(1f, fill = false)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+        // ---------- TARJETA FORMULARIO ----------
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            shape = RoundedCornerShape(16.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            OutlinedTextField(
-                value = fecha,
-                onValueChange = { fecha = it },
-                label = { Text("Fecha (dd/mm/yyyy)") },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !editando // no se cambia la fecha al editar
-            )
-
-            OutlinedTextField(
-                value = inicioPeriodo,
-                onValueChange = { inicioPeriodo = it },
-                label = { Text("Inicio del período (dd/mm/yyyy)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Text("¿Qué observaste en EVA?")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Nivel.values().forEach { opcion ->
-                    FilterChip(
-                        selected = nivel == opcion,
-                        onClick = { nivel = opcion },
-                        label = { Text(opcion.texto) }
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (editando) Icons.Default.Edit else Icons.Default.Add,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (editando) "Editar registro" else "Nueva observación EVA",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
-            }
 
-            OutlinedTextField(
-                value = notas,
-                onValueChange = { notas = it },
-                label = { Text("Síntomas o notas (opcional)") },
-                minLines = 2,
-                modifier = Modifier.fillMaxWidth()
-            )
+                OutlinedTextField(
+                    value = fecha,
+                    onValueChange = { fecha = it },
+                    label = { Text("Fecha de registro (yyyy-MM-dd)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !editando
+                )
 
-            Text("Foto del patrón (opcional)")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { permisoCamara.launch(Manifest.permission.CAMERA) }) {
-                    Text("Cámara")
-                }
-                OutlinedButton(onClick = { galeria.launch("image/*") }) {
-                    Text("Galería")
-                }
-            }
+                OutlinedTextField(
+                    value = inicioPeriodo,
+                    onValueChange = { inicioPeriodo = it },
+                    label = { Text("Inicio del período (yyyy-MM-dd)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            if (foto.isNotEmpty()) {
-                val imagen = remember(foto) { BitmapFactory.decodeFile(foto) }
-                if (imagen != null) {
-                    Image(
-                        bitmap = imagen.asImageBitmap(),
-                        contentDescription = "Foto del patrón",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(160.dp),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-                TextButton(onClick = { foto = "" }) { Text("Quitar foto") }
-            }
+                Text(
+                    text = "¿Qué patrón observaste en EVA?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = {
-                        vm.guardar(fecha, inicioPeriodo, nivel!!, notas, foto)
-                        limpiarFormulario()
-                    },
-                    enabled = puedeGuardar,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(if (editando) "Actualizar" else "Guardar")
-                }
-                if (editando) {
-                    OutlinedButton(onClick = { limpiarFormulario() }) {
-                        Text("Cancelar")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Nivel.values().forEach { opcion ->
+                        val selected = nivel == opcion
+                        FilterChip(
+                            selected = selected,
+                            onClick = { nivel = opcion },
+                            label = { Text(opcion.texto) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        )
                     }
                 }
-            }
 
-            if (mensaje.isNotEmpty()) {
-                Text(mensaje, color = MaterialTheme.colorScheme.primary)
-            }
+                OutlinedTextField(
+                    value = notas,
+                    onValueChange = { notas = it },
+                    label = { Text("Síntomas o notas adicionales (opcional)") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth()
+                )
 
-            AvisoEva()
+                Text(
+                    text = "Fotografía del patrón EVA (opcional)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(
+                        onClick = { permisoCamara.launch(Manifest.permission.CAMERA) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("📷 Cámara")
+                    }
+                    OutlinedButton(
+                        onClick = { galeria.launch("image/*") },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("🖼️ Galería")
+                    }
+                }
+
+                if (foto.isNotEmpty()) {
+                    val imagen = remember(foto) { BitmapFactory.decodeFile(foto) }
+                    if (imagen != null) {
+                        Image(
+                            bitmap = imagen.asImageBitmap(),
+                            contentDescription = "Foto del patrón",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    TextButton(onClick = { foto = "" }) { Text("Quitar fotografía") }
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            vm.guardar(fecha, inicioPeriodo, nivel!!, notas, foto)
+                            limpiarFormulario()
+                        },
+                        enabled = puedeGuardar,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(if (editando) "Actualizar" else "Guardar Registro")
+                    }
+                    if (editando) {
+                        OutlinedButton(onClick = { limpiarFormulario() }) {
+                            Text("Cancelar")
+                        }
+                    }
+                }
+
+                if (mensaje.isNotEmpty()) {
+                    Text(
+                        text = mensaje,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                AvisoEva()
+            }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-        // ---------- HISTORIAL ----------
-        Text("Historial", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(8.dp))
+        // ---------- HISTORIAL DE REGISTROS ----------
+        Text(
+            text = "Historial de Observaciones",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
 
         if (registros.isEmpty()) {
             Text(
-                "Aún no hay registros. Guarda tu primera observación.",
-                style = MaterialTheme.typography.bodyMedium
+                text = "Aún no hay registros guardados. Añade tu primera observación arriba.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else {
             LazyColumn(
@@ -261,33 +316,59 @@ private fun CardRegistro(
     onBorrar: () -> Unit
 ) {
     var confirmarBorrado by remember { mutableStateOf(false) }
+    val nivelEnum = try { Nivel.valueOf(registro.nivel) } catch (e: Exception) { Nivel.NULO }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
+    val badgeColor = when (nivelEnum) {
+        Nivel.ALTO -> EvaAltoColor
+        Nivel.MEDIO -> EvaMedioColor
+        Nivel.NULO -> EvaNuloColor
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
         Row(
             modifier = Modifier
-                .padding(12.dp)
+                .padding(14.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(registro.fecha, style = MaterialTheme.typography.titleSmall)
                 Text(
-                    Nivel.valueOf(registro.nivel).texto,
-                    style = MaterialTheme.typography.bodyMedium
+                    text = registro.fecha,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
                 )
-                if (registro.notas.isNotBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Surface(
+                    color = badgeColor,
+                    shape = RoundedCornerShape(6.dp)
+                ) {
                     Text(
-                        registro.notas,
+                        text = nivelEnum.texto,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.surface,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                    )
+                }
+                if (registro.notas.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = registro.notas,
                         style = MaterialTheme.typography.bodySmall,
                         maxLines = 1
                     )
                 }
             }
             IconButton(onClick = onEditar) {
-                Icon(Icons.Default.Edit, contentDescription = "Editar")
+                Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
             }
             IconButton(onClick = { confirmarBorrado = true }) {
-                Icon(Icons.Default.Delete, contentDescription = "Borrar")
+                Icon(Icons.Default.Delete, contentDescription = "Borrar", tint = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -295,15 +376,15 @@ private fun CardRegistro(
     if (confirmarBorrado) {
         AlertDialog(
             onDismissRequest = { confirmarBorrado = false },
-            title = { Text("¿Borrar registro?") },
+            title = { Text("¿Eliminar registro?") },
             text = {
-                Text("Se eliminará el registro del ${registro.fecha}. Esta acción no se puede deshacer.")
+                Text("Se eliminará la observación del ${registro.fecha}. Esta acción no se puede deshacer.")
             },
             confirmButton = {
                 TextButton(onClick = {
                     onBorrar()
                     confirmarBorrado = false
-                }) { Text("Borrar") }
+                }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
                 TextButton(onClick = { confirmarBorrado = false }) { Text("Cancelar") }
