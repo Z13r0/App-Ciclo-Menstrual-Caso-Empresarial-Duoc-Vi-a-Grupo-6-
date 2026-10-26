@@ -12,3 +12,10 @@ local.properties
 .kotlin/
 captures/
 .externalNativeBuild/
+
+# Backend Spring Boot (no subir compilados)
+backend-myciclo/target/
+**/target/
+
+# Por si quedó un pom.xml dentro de app por error
+app/pom.xml
