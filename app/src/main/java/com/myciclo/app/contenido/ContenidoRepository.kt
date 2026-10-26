@@ -2,7 +2,6 @@ package com.myciclo.app.contenido
 
 // interfaz para no amarrar la pantalla a una sola fuente de datos
 // hoy hay dos: la api (retrofit) y una lista local de respaldo
-// si el profe deja usar firebase se agrega otra clase que implemente esto
 interface ContenidoRepository {
     suspend fun obtenerGuias(): List<Guia>
 }
@@ -69,7 +68,7 @@ class ContenidoLocalRepository : ContenidoRepository {
     )
 }
 
-// version que pide las guias a la api de spring boot
+// Versión que pide las guías a la API de Spring Boot
 class ContenidoApiRepository : ContenidoRepository {
     override suspend fun obtenerGuias(): List<Guia> = RetrofitClient.api.obtenerGuias()
 }
