@@ -58,7 +58,7 @@ fun CalendarioScreen(vm: CalendarioViewModel = viewModel()) {
     val formatoCorto = DateTimeFormatter.ofPattern("dd/MM")
     val formatoLargo = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
-    // dia que toco la usuaria, null significa que no hay dialogo abierto
+    // Día que tocó la usuaria; null significa que no hay diálogo abierto
     var seleccionado by remember { mutableStateOf<LocalDate?>(null) }
 
     Column(
@@ -67,18 +67,19 @@ fun CalendarioScreen(vm: CalendarioViewModel = viewModel()) {
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // resumen arriba
+        // ---------- RESUMEN ARRIBA ----------
         Text(
             text = if (estado.diaCiclo != null) "Día ${estado.diaCiclo} del ciclo" else "Aún no hay registros",
             style = MaterialTheme.typography.headlineSmall
         )
 
-        // fase estimada, la calcula faseDelCiclo que esta en FaseCiclo.kt
+        // Fase estimada
         val fase = estado.fase
         if (fase != null) {
             Text(fase.texto, style = MaterialTheme.typography.titleMedium)
         }
 
+        // Ventana EVA
         val ventana = estado.ventana
         if (ventana != null) {
             Text("Ventana EVA: ${ventana.inicio.format(formatoCorto)} al ${ventana.fin.format(formatoCorto)}")
@@ -86,7 +87,21 @@ fun CalendarioScreen(vm: CalendarioViewModel = viewModel()) {
             Text("Todavía no registras helecho en este ciclo")
         }
 
-        // flechas para cambiar de mes
+        // Duración promedio del ciclo (Fase 2)
+        val promedio = estado.promedioCiclo
+        if (promedio != null) {
+            Text(
+                "Duración promedio de ciclo: $promedio días",
+                style = MaterialTheme.typography.bodyLarge
+            )
+        } else {
+            Text(
+                "Registra al menos 2 ciclos para ver el promedio",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        // ---------- NAVEGACIÓN DE MES ----------
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = { mes = mes.minusMonths(1) }) { Text("<") }
             Text(
@@ -97,23 +112,22 @@ fun CalendarioScreen(vm: CalendarioViewModel = viewModel()) {
             TextButton(onClick = { mes = mes.plusMonths(1) }) { Text(">") }
         }
 
+        // Encabezado de días
         Row {
             listOf("L", "M", "M", "J", "V", "S", "D").forEach {
                 Text(it, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
             }
         }
 
-        // armamos la lista de dias del mes, con espacios vacios antes del dia 1
+        // Celdas del mes
         val vacios = mes.atDay(1).dayOfWeek.value - 1
         val celdas = List(vacios) { null } + (1..mes.lengthOfMonth()).map { mes.atDay(it) }
 
-        // la dividimos en semanas de 7
         celdas.chunked(7).forEach { semana ->
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 semana.forEach { dia ->
                     Box(modifier = Modifier.weight(1f)) {
                         if (dia != null) {
-                            // al tocar la celda guardamos el dia y eso abre el dialogo
                             CeldaDia(
                                 dia = dia,
                                 nivel = estado.dias[dia],
@@ -123,20 +137,24 @@ fun CalendarioScreen(vm: CalendarioViewModel = viewModel()) {
                         }
                     }
                 }
-                // relleno para que la ultima semana no se estire
+                // Relleno para que la última semana no se estire
                 repeat(7 - semana.size) { Spacer(Modifier.weight(1f)) }
             }
         }
 
-        Text("Morado: alto · Rosado: medio · Gris: nulo · Fondo: ventana EVA",
-            style = MaterialTheme.typography.bodySmall)
-        Text("Toca un día para ver lo que registraste",
-            style = MaterialTheme.typography.bodySmall)
+        Text(
+            "Morado: alto · Rosado: medio · Gris: nulo · Fondo: ventana EVA",
+            style = MaterialTheme.typography.bodySmall
+        )
+        Text(
+            "Toca un día para ver lo que registraste",
+            style = MaterialTheme.typography.bodySmall
+        )
 
         AvisoEva()
     }
 
-    // el dialogo se dibuja fuera de la columna para que tape toda la pantalla
+    // Diálogo fuera de la columna para que tape toda la pantalla
     val dia = seleccionado
     if (dia != null) {
         DetalleDia(
@@ -148,8 +166,10 @@ fun CalendarioScreen(vm: CalendarioViewModel = viewModel()) {
     }
 }
 
-// dialogo con lo que la usuaria anoto ese dia
-// registro llega null cuando toco un dia que nunca registro
+/**
+ * Diálogo con lo que la usuaria anotó ese día.
+ * registro llega null cuando tocó un día que nunca registró.
+ */
 @Composable
 fun DetalleDia(
     dia: LocalDate,
@@ -166,15 +186,12 @@ fun DetalleDia(
                 Text("Ese día no tiene registro")
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    // el nivel esta guardado como texto, lo volvemos al enum para mostrar su etiqueta
                     Text("Observación: " + Nivel.valueOf(registro.nivel).texto)
 
-                    // las notas son opcionales, si estan vacias no mostramos la linea
                     if (registro.notas.isNotEmpty()) {
                         Text("Notas: " + registro.notas)
                     }
 
-                    // la foto tambien es opcional y se lee desde la carpeta de la app
                     if (registro.foto.isNotEmpty()) {
                         val imagen = remember(registro.foto) { BitmapFactory.decodeFile(registro.foto) }
                         if (imagen != null) {
@@ -206,7 +223,6 @@ fun CeldaDia(dia: LocalDate, nivel: Nivel?, enVentana: Boolean, onClick: () -> U
         verticalArrangement = Arrangement.Center
     ) {
         Text(dia.dayOfMonth.toString())
-        // puntito con el color del nivel si ese dia tiene registro
         if (nivel != null) {
             val color = when (nivel) {
                 Nivel.ALTO -> Morado
