@@ -85,8 +85,8 @@ com.myciclo.app/
 - [ ] **Filtro / Búsqueda en Historial:** Filtrar registros por nivel de observación EVA (Nulo, Bajo, Medio, Alto) o por texto libre en notas.
 
 ### 📅 Integrante 2 - Módulo Calendario
-- [ ] **Navegación entre Meses:** Agregar controles de navegación (mes anterior / mes siguiente) en `CalendarioScreen`.
-- [ ] **Parseo Seguro con `FechaUtils`:** Sustituir llamadas directas a `LocalDate.parse(...)` por `FechaUtils.parsear(...)` en `CalendarioViewModel` para prevenir excepciones por variaciones de formato.
+- [x] **Navegación entre Meses:** ✅ Completado - Controles de navegación (mes anterior / mes siguiente) ya implementados en `CalendarioScreen`.
+- [x] **Parseo Seguro con `FechaUtils`:** ✅ Completado - `FechaUtils.parsear(...)` ya se usa en `CalendarioViewModel`.
 - [ ] **Indicadores de Regularidad:** Añadir resumen visual del historial de ciclos (variación en días entre períodos).
 
 ### 📚 Integrante 3 - Módulo Contenido & Notificaciones
@@ -125,10 +125,35 @@ La aplicación está preparada para consumir la API de guías educativas:
 
 ## 🧪 Pruebas y Validación
 
-### Pruebas Unitarias (JUnit 4)
-Para ejecutar la suite de pruebas unitarias de lógica pura (cálculo de ventana fértil y fases del ciclo):
+### Requisitos de Java
+**IMPORTANTE:** Este proyecto requiere Java 17 o superior.
+- **Java configurado:** Java 21 (`C:\Program Files\Java\jdk-21.0.11`)
+- **Configuración automática:** El archivo `gradle.properties` ya está configurado para usar Java 21
+- **Nota:** Java 25.0.4 NO es compatible con Kotlin 2.0.21 - se debe usar Java 17-22
+
+### Compilación del Proyecto Android
+Para compilar el proyecto Android desde la línea de comandos:
 ```bash
+# En Windows (PowerShell o CMD) - RECOMENDADO
+compile-android.bat
+
+# O manualmente (evita problemas de lint):
+./gradlew assembleDebug -x lint
+
+# Solo pruebas unitarias:
 ./gradlew test
+```
+
+### Compilación del Backend Spring Boot
+El backend requiere Maven. Si no está instalado, descárgalo desde https://maven.apache.org/download.cgi
+```bash
+# En Windows (PowerShell o CMD)
+compile-backend.bat
+
+# O manualmente con Maven instalado:
+cd backend-myciclo
+mvn clean package
+java -jar target/api-guias-1.0.0.jar
 ```
 
 ### Prueba en Dispositivo o Emulador

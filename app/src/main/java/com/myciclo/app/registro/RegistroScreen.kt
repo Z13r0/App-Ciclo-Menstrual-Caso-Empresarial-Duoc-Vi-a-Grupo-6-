@@ -113,7 +113,7 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
     }
 
     fun limpiarFormulario() {
-        fecha = LocalDate.now().toString()
+        fecha = com.myciclo.app.util.FechaUtils.hoyIso()
         inicioPeriodo = ""
         nivel = null
         notas = ""
@@ -121,7 +121,8 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
         editando = false
     }
 
-    val puedeGuardar = nivel != null && inicioPeriodo.isNotBlank()
+    val fechaValida = com.myciclo.app.util.FechaUtils.esValida(fecha) && com.myciclo.app.util.FechaUtils.esValida(inicioPeriodo)
+    val puedeGuardar = nivel != null && inicioPeriodo.isNotBlank() && fechaValida
 
     LaunchedEffect(mensaje) {
         if (mensaje.isNotEmpty()) {
@@ -188,7 +189,7 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
                 )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Nivel.values().forEach { opcion ->
+                    Nivel.entries.forEach { opcion ->
                         val selected = nivel == opcion
                         FilterChip(
                             selected = selected,

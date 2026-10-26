@@ -7,6 +7,7 @@ import com.myciclo.app.data.AppDatabase
 import com.myciclo.app.registro.Nivel
 import com.myciclo.app.registro.RegistroEntity
 import com.myciclo.app.registro.RegistroRepository
+import com.myciclo.app.util.FechaUtils
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -41,18 +42,21 @@ class CalendarioViewModel(app: Application) : AndroidViewModel(app) {
             if (lista.isEmpty()) {
                 CalendarioEstado()
             } else {
-                val dias = lista.map {
-                    DiaObservado(LocalDate.parse(it.fecha), Nivel.valueOf(it.nivel))
+                val dias = lista.mapNotNull {
+                    val fechaParsed = FechaUtils.parsear(it.fecha) ?: return@mapNotNull null
+                    DiaObservado(fechaParsed, Nivel.valueOf(it.nivel))
                 }
                 // El ciclo actual lo marca el registro más nuevo (la lista viene ordenada DESC)
-                val inicioCiclo = LocalDate.parse(lista.first().inicioPeriodo)
+                val inicioCiclo = lista.firstNotNullOfOrNull { FechaUtils.parsear(it.inicioPeriodo) } ?: LocalDate.now()
                 val hoy = LocalDate.now()
                 val ventana = calcularVentana(dias, inicioCiclo)
                 val dia = diaDelCiclo(inicioCiclo, hoy)
 
                 CalendarioEstado(
-                    dias = dias.associate { it.fecha to it.nivel },
-                    detalles = lista.associateBy { LocalDate.parse(it.fecha) },
+                    dias = dias.associateBy({ it.fecha }, { it.nivel }),
+                    detalles = lista.mapNotNull { reg ->
+                        FechaUtils.parsear(reg.fecha)?.let { it to reg }
+                    }.toMap(),
                     ventana = ventana,
                     diaCiclo = dia,
                     fase = faseDelCiclo(dia, ventana, hoy),
@@ -72,20 +76,14 @@ class CalendarioViewModel(app: Application) : AndroidViewModel(app) {
         val inicios = registros
             .map { it.inicioPeriodo }
             .distinct()
-            .mapNotNull {
-                try {
-                    LocalDate.parse(it)
-                } catch (e: Exception) {
-                    null
-                }
-            }
+            .mapNotNull { FechaUtils.parsear(it) }
             .sorted()
 
         if (inicios.size < 2) return null
 
         val duraciones = inicios.zipWithNext { anterior, siguiente ->
             ChronoUnit.DAYS.between(anterior, siguiente).toInt()
-        }.filter { it in 21..45 }
+        }.filter { (it in 21..45) }
 
         return if (duraciones.isEmpty()) null else duraciones.average().toInt()
     }

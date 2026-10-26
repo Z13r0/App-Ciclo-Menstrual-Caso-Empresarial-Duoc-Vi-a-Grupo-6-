@@ -19,3 +19,7 @@ backend-myciclo/target/
 
 # Por si quedó un pom.xml dentro de app por error
 app/pom.xml
+
+# Scripts de compilación local (opcional - se pueden subir si son útiles para el equipo)
+# compile-android.bat
+# compile-backend.bat
