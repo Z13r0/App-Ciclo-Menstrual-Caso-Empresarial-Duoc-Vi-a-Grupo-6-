@@ -121,6 +121,24 @@ La aplicación está preparada para consumir la API de guías educativas:
   ]
   ```
 
+### Alternativa en la nube: Supabase
+
+El Spring Boot en `10.0.2.2:8080` solo responde en el emulador del PC que tiene el servidor levantado. Para demostrar la app en un celular real hace falta una API accesible desde internet, así que se agregó Supabase como **segunda fuente remota**, usando la misma interfaz `ContenidoRepository`.
+
+Supabase publica una API REST automática sobre la tabla, así que no hay backend nuevo que escribir:
+- **Endpoint:** `GET https://<proyecto>.supabase.co/rest/v1/guias?select=*&order=id`
+- **Headers:** `apikey` y `Authorization: Bearer <anon key>`
+- **JSON de respuesta:** el mismo de arriba, porque las columnas de la tabla se llaman igual que los campos de `Guia.kt`
+
+Pasos para activarlo:
+1. Crear el proyecto en [supabase.com](https://supabase.com) (plan gratuito).
+2. En el **SQL Editor**, ejecutar `docs/supabase.sql`. Eso crea la tabla `guias`, activa Row Level Security y deja una política de solo lectura para el rol `anon`.
+3. Copiar la URL y la llave **anon** desde *Project Settings → API* a `contenido/SupabaseConfig.kt`.
+
+Mientras `SupabaseConfig` esté vacío la app sigue usando el Spring Boot: `repositorioRemoto()` elige la fuente según si hay URL y llave configuradas, y si ninguna responde quedan las guías locales. Las tres fuentes conviven sin tocarse.
+
+> **Importante:** en la app va solo la llave `anon`, que es pública y está limitada por las políticas RLS. La llave `service_role` nunca debe ir en el código de la app porque permite escribir toda la base.
+
 ---
 
 ## 🧪 Pruebas y Validación

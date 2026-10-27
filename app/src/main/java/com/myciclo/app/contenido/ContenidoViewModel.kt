@@ -13,8 +13,10 @@ sealed class ContenidoEstado {
     data class Listo(val guias: List<Guia>, val sinConexion: Boolean) : ContenidoEstado()
 }
 
+// api es la fuente remota y repositorioRemoto decide si es supabase o el spring boot
+// local son las guias que estan escritas en el codigo, se usan si la remota falla
 class ContenidoViewModel(
-    private val api: ContenidoRepository = ContenidoApiRepository(),
+    private val api: ContenidoRepository = repositorioRemoto(),
     private val local: ContenidoRepository = ContenidoLocalRepository()
 ) : ViewModel() {
 
