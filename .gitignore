@@ -6,6 +6,13 @@ build/
 # Local
 local.properties
 
+# Firma del APK de release: NUNCA se suben
+# el .jks es la llave y keystore.properties tiene las claves
+# si esto se sube cualquiera puede firmar una app haciendose pasar por la nuestra
+*.jks
+*.keystore
+keystore.properties
+
 # IDE / Kotlin
 .idea/
 *.iml

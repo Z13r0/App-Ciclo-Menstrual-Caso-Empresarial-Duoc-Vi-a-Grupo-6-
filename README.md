@@ -174,6 +174,31 @@ mvn clean package
 java -jar target/api-guias-1.0.0.jar
 ```
 
+### APK Firmado en Modo Release (entregable del caso)
+
+El caso pide entregar el APK **firmado en modo release**, así que el proyecto ya trae el `signingConfig` listo en `app/build.gradle.kts`.
+
+```bash
+./gradlew assembleRelease
+# queda en: app/build/outputs/apk/release/app-release.apk
+```
+
+Las credenciales se leen de `keystore.properties`, en la raíz del proyecto. Ese archivo y el `.jks` **no están en el repositorio** (los dos en `.gitignore`), porque el `.jks` es la llave con la que se firma la app: si se sube, cualquiera puede firmar una aplicación haciéndose pasar por nosotros.
+
+Para compilar un release firmado en tu PC:
+1. Pedirle al grupo el archivo `myciclo-release.jks` y las claves (por fuera de Git).
+2. Dejar el `.jks` en la raíz del proyecto, junto a `settings.gradle.kts`.
+3. Copiar `keystore.properties.ejemplo` como `keystore.properties` y completar las claves.
+
+Si no tienes esos archivos el proyecto compila igual, pero el APK de release sale **sin firmar**: sirve para probar, no para entregar.
+
+Para comprobar que un APK quedó firmado:
+```bash
+apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
+```
+
+> **Cuidado:** guarden una copia del `.jks` y de sus claves. Si se pierden no se puede volver a firmar con la misma llave, y Android considera una app firmada con otra llave como una aplicación distinta.
+
 ### Prueba en Dispositivo o Emulador
 1. Abrir el proyecto en **Android Studio**.
 2. Seleccionar un emulador o dispositivo físico con Android 13+ (API 33+).

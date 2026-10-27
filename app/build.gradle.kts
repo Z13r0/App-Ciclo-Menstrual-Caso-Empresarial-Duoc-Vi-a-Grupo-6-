@@ -1,8 +1,20 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+}
+
+// los datos de la firma viven en keystore.properties, que NO se sube al repo
+// si el archivo no esta, el release se arma sin firmar y nada se cae:
+// asi el que no tenga la llave igual puede compilar y sincronizar el proyecto
+val archivoFirma = rootProject.file("keystore.properties")
+val datosFirma = Properties()
+val hayFirma = archivoFirma.exists()
+if (hayFirma) {
+    datosFirma.load(archivoFirma.inputStream())
 }
 
 android {
@@ -17,10 +29,26 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            // solo se llena si existe keystore.properties
+            if (hayFirma) {
+                storeFile = rootProject.file(datosFirma.getProperty("storeFile"))
+                storePassword = datosFirma.getProperty("storePassword")
+                keyAlias = datosFirma.getProperty("keyAlias")
+                keyPassword = datosFirma.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // sin el archivo de claves el apk sale sin firmar, pero el build no falla
+            if (hayFirma) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     lint {
