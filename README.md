@@ -127,9 +127,9 @@ La aplicación está preparada para consumir la API de guías educativas:
 
 ### Requisitos de Java
 **IMPORTANTE:** Este proyecto requiere Java 17 o superior.
-- **Java configurado:** Java 21 (`C:\Program Files\Java\jdk-21.0.11`)
-- **Configuración automática:** El archivo `gradle.properties` ya está configurado para usar Java 21
-- **Nota:** Java 25.0.4 NO es compatible con Kotlin 2.0.21 - se debe usar Java 17-22
+- **Versión de compilación:** la fija `jvmToolchain(17)` en `app/build.gradle.kts`, no hay que configurar nada.
+- **Nota:** Java 25 NO es compatible con Kotlin 2.0.21 - se debe usar Java 17-22.
+- **Si tu Java por defecto no es 17-22:** pon la ruta en tu archivo personal `C:\Users\<tu usuario>\.gradle\gradle.properties`, **no** en el `gradle.properties` del proyecto. Esa ruta cambia en cada PC y si se sube rompe el build de los demás (`Java home supplied is invalid`).
 
 ### Compilación del Proyecto Android
 Para compilar el proyecto Android desde la línea de comandos:
