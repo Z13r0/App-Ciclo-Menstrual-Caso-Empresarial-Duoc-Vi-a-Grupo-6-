@@ -282,6 +282,7 @@ Proyecto desarrollado para el caso empresarial DSY1105, Grupo 6. Universidad Duo
 ## 👥 Equipo de Desarrollo
 
 **Grupo 6 - DSY1105**
-- Integrante 1: Módulo Registro
-- Integrante 2: Módulo Calendario
-- Integrante 3: Módulo Contenido y Notificaciones
+** Integrantes **
+- Ignacio Vera
+- Sebastian Cerda
+- Benjamin Navarrete
