@@ -39,7 +39,7 @@ object Fotos {
         return try {
             entrada.use { desde -> destino.outputStream().use { hacia -> desde.copyTo(hacia) } }
             destino
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // si algo falla preferimos no guardar nada antes que dejar una ruta rota
             null
         }

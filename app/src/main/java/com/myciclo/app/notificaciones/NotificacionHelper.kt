@@ -13,15 +13,12 @@ import java.util.Calendar
  * Gestiona el canal de notificaciones y programa el recordatorio diario
  * para observar EVA (exigencia del caso empresarial).
  *
- * La notificación se muestra todos los días a las 09:00.
- * El diario nunca se envía a internet; solo se muestra un recordatorio local.
+ * Soporta configuración personalizada de hora y activación/desactivación dinámica.
  */
 object NotificacionHelper {
 
     const val CANAL_ID = "eva_recordatorio"
     const val NOTIF_ID = 1001
-    const val HORA_RECORDATORIO = 9   // 09:00 AM
-    const val MINUTO_RECORDATORIO = 0
 
     /** Crea el canal de notificaciones (obligatorio desde Android 8). */
     fun crearCanal(context: Context) {
@@ -39,10 +36,26 @@ object NotificacionHelper {
     }
 
     /**
-     * Programa una alarma que se repite todos los días a la hora configurada.
-     * Si la hora de hoy ya pasó, programa para mañana.
+     * Sincroniza la alarma con las preferencias guardadas por el usuario.
      */
-    fun programarRecordatorioDiario(context: Context) {
+    fun sincronizarNotificacion(context: Context) {
+        val prefs = AjustesPreferences(context)
+        if (prefs.notificacionesActivadas) {
+            programarRecordatorioDiario(context, prefs.horaRecordatorio, prefs.minutoRecordatorio)
+        } else {
+            cancelarRecordatorio(context)
+        }
+    }
+
+    /**
+     * Programa una alarma que se repite todos los días a la hora y minuto configurados.
+     * Si la hora de hoy ya pasó, la programa para mañana.
+     */
+    fun programarRecordatorioDiario(
+        context: Context,
+        hora: Int = 9,
+        minuto: Int = 0
+    ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, RecordatorioReceiver::class.java)
         val pending = PendingIntent.getBroadcast(
@@ -53,8 +66,8 @@ object NotificacionHelper {
         )
 
         val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, HORA_RECORDATORIO)
-            set(Calendar.MINUTE, MINUTO_RECORDATORIO)
+            set(Calendar.HOUR_OF_DAY, hora)
+            set(Calendar.MINUTE, minuto)
             set(Calendar.SECOND, 0)
             if (before(Calendar.getInstance())) {
                 add(Calendar.DAY_OF_YEAR, 1)
@@ -69,7 +82,7 @@ object NotificacionHelper {
         )
     }
 
-    /** Cancela el recordatorio diario (por si más adelante agregan un switch en Configuración). */
+    /** Cancela el recordatorio diario programado en AlarmManager. */
     fun cancelarRecordatorio(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, RecordatorioReceiver::class.java)

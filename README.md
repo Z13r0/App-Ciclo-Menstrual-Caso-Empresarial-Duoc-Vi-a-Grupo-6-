@@ -1,61 +1,106 @@
 # myCiclo - Bitácora EVA (DSY1105, Grupo 6)
 
-Aplicación Android nativa desarrollada para la solución empresarial **myCiclo**: permite a las usuarias registrar las observaciones diarias del patrón microscópico de la saliva (EVA), visualizar la ventana fértil y fases del ciclo menstrual en un calendario interactivo, recibir un recordatorio diario local y consultar guías educativas sobre el uso del dispositivo y el método.
+Aplicación Android nativa profesional desarrollada para la solución empresarial **myCiclo**: permite a las usuarias registrar las observaciones diarias del patrón microscópico de la saliva (EVA), visualizar la ventana fértil y fases del ciclo menstrual en un calendario interactivo, recibir recordatorios diarios configurables y consultar guías educativas con búsqueda avanzada y sistema de favoritas.
 
-Desarrollada en **Kotlin** con **Jetpack Compose**, **Material 3**, **MVVM**, **Room Database** y **Retrofit**.
+Desarrollada en **Kotlin 2.0+** con **Jetpack Compose**, **Material 3**, **MVVM**, **Room Database** y **Retrofit**.
 
 ---
 
-## 🚀 Arquitectura y Tecnologías
+## 🚀 Características Principales
 
+### 📝 Registro Diario de Observaciones EVA
+- Formulario completo con validación de fechas usando `FechaUtils`
+- Captura de fotografías mediante cámara nativa o galería
+- Almacenamiento privado de imágenes (no accesible desde galería pública)
+- Historial interactivo con edición y eliminación de registros
+- Validación segura de entradas de usuario
+
+### 📅 Calendario Inteligente
+- Vista mensual interactiva con navegación entre meses
+- Cálculo automático de ventana fértil según método EVA (primer helecho + 8 días)
+- Identificación de fase del ciclo actual (Menstruación, Folicular, Ventana EVA, Lútea)
+- Estadísticas de ciclo: duración promedio y variación entre ciclos
+- Diálogo de detalle por día con foto, notas y patrón observado
+- Manejo seguro de fechas con `FechaUtils` para evitar crashes
+
+### 📚 Contenido Educativo Avanzado
+- Guías educativas sobre uso de EVA, interpretación de patrones y privacidad
+- Búsqueda en tiempo real por título y contenido
+- Filtros por categoría (Manual, Educación, Preguntas Frecuentes)
+- Sistema de favoritas persistente con SharedPreferences
+- Soporte híbrido: API REST (Spring Boot/Supabase) + fallback local offline
+- Interfaz intuitiva con tarjetas expandibles
+
+### ⏰ Notificaciones Configurables
+- Pantalla de ajustes con TimePicker nativo
+- Configuración personalizable de hora del recordatorio
+- Activación/desactivación dinámica de alarmas
+- Solicitud automática de permisos en Android 13+
+- Sincronización con AlarmManager
+- Persistencia de configuración con SharedPreferences
+
+---
+
+## 🏗️ Arquitectura y Tecnologías
+
+### Stack Tecnológico
 - **Lenguaje:** Kotlin 2.0+ (Target JVM 17)
-- **UI:** Jetpack Compose + Material 3 Design (Navigation Compose)
-- **Arquitectura:** MVVM (Model-View-ViewModel) + Clean Data Layer (Repositories & DAOs)
-- **Persistencia Local:** Room Database (con soporte para fotos en almacenamiento interno)
-- **Red / API:** Retrofit 2 + Gson Converter (con estrategia de respaldo a guías locales offline)
-- **Notificaciones Locales:** AlarmManager + NotificationChannel + BroadcastReceiver (Recordatorio diario 09:00 AM)
+- **UI Framework:** Jetpack Compose + Material 3 Design
+- **Navegación:** Navigation Compose
+- **Arquitectura:** MVVM (Model-View-ViewModel) + Clean Data Layer
+- **Persistencia:** Room Database (almacenamiento local)
+- **Red:** Retrofit 2 + Gson Converter
+- **Notificaciones:** AlarmManager + NotificationChannel
 - **Asincronía:** Kotlin Coroutines & StateFlow
 
----
-
-## 📁 Estructura del Proyecto
-
-Organizado por módulos funcionales para trabajo colaborativo y mantenible:
+### Estructura del Proyecto
+Organizado por módulos funcionales para mantenibilidad y colaboración:
 
 ```
 com.myciclo.app/
-├── MainActivity.kt                  # Punto de entrada, permisos runtime (Android 13+) y notificaciones
-├── navegacion/                      # Rutas (Screen.kt) y barra de navegación inferior (AppNavegacion.kt)
-├── data/                            # Base de datos local (AppDatabase.kt)
-├── ui/                              # Tema de la app (MyCicloTheme) y componentes compartidos (AvisoEva.kt)
-├── util/                            # Utilidades de fecha y formato (FechaUtils.kt)
-├── notificaciones/                  # AlarmManager y NotificationChannel (NotificacionHelper.kt, RecordatorioReceiver.kt)
-│
-├── registro/                        # [Módulo Registro Diario]
-│   ├── Nivel.kt                     # Enum de observaciones EVA (Nulo, Bajo, Medio, Alto)
-│   ├── RegistroEntity.kt            # Entidad Room para observaciones diarias
-│   ├── RegistroDao.kt               # Consultas Room
-│   ├── RegistroRepository.kt        # Repositorio de datos de registros
-│   ├── RegistroViewModel.kt         # Lógica de presentación y estado de registros
-│   ├── RegistroScreen.kt            # Formulario, cámara/galería e historial interactivo (Editar/Eliminar)
-│   └── Fotos.kt                     # Manejo de imágenes en la carpeta privada de la app
-│
-├── calendario/                      # [Módulo Calendario & Estimación]
-│   ├── VentanaFertil.kt             # Regla EVA: primer helecho + 8 días de ventana fértil
-│   ├── FaseCiclo.kt                 # Cálculo de fases del ciclo (Menstruación, Folicular, Ventana EVA, Lútea)
-│   ├── CalendarioViewModel.kt       # Cálculo de estado del calendario y duración promedio del ciclo
-│   └── CalendarioScreen.kt          # Vista de calendario mensual y diálogo de detalle por día
-│
-└── contenido/                       # [Módulo Contenido Educativo]
-    ├── Guia.kt                      # Modelo de datos de las guías
-    ├── ContenidoApi.kt              # Interfaz Retrofit para API REST
-    ├── ContenidoRepository.kt       # Repositorio con soporte híbrido (API Remote + Local Fallback)
-    ├── ContenidoViewModel.kt        # Gestión del estado de la pantalla de contenido
-    └── ContenidoScreen.kt           # Vista de guías educativas y preguntas frecuentes
+├── MainActivity.kt                          # Punto de entrada, permisos runtime
+├── navegacion/                              # Navegación y rutas
+│   ├── Screen.kt                            # Rutas de navegación
+│   └── AppNavegacion.kt                     # Barra de navegación inferior
+├── data/                                    # Base de datos local
+│   └── AppDatabase.kt                       # Configuración Room
+├── ui/                                      # Tema y componentes compartidos
+│   ├── theme/                              # MyCicloTheme y colores
+│   └── componentes/                        # AvisoEva y otros componentes
+├── util/                                    # Utilidades
+│   └── FechaUtils.kt                        # Manejo seguro de fechas
+├── notificaciones/                          # Sistema de notificaciones
+│   ├── NotificacionHelper.kt               # Gestión de AlarmManager
+│   ├── RecordatorioReceiver.kt             # BroadcastReceiver
+│   ├── AjustesScreen.kt                    # Pantalla de configuración
+│   └── AjustesPreferences.kt                # Persistencia de ajustes
+├── registro/                                # Módulo de registro diario
+│   ├── Nivel.kt                            # Enum de niveles EVA
+│   ├── RegistroEntity.kt                   # Entidad Room
+│   ├── RegistroDao.kt                      # Consultas Room
+│   ├── RegistroRepository.kt               # Repositorio de datos
+│   ├── RegistroViewModel.kt                # ViewModel
+│   ├── RegistroScreen.kt                   # Pantalla de registro
+│   └── Fotos.kt                            # Manejo de imágenes
+├── calendario/                              # Módulo de calendario
+│   ├── VentanaFertil.kt                    # Cálculo de ventana fértil
+│   ├── FaseCiclo.kt                        # Fases del ciclo
+│   ├── CalendarioViewModel.kt              # ViewModel
+│   └── CalendarioScreen.kt                 # Pantalla de calendario
+└── contenido/                               # Módulo de contenido educativo
+    ├── Guia.kt                             # Modelo de datos
+    ├── ContenidoApi.kt                     # Interfaz Retrofit
+    ├── ContenidoRepository.kt              # Repositorio híbrido
+    ├── ContenidoViewModel.kt               # ViewModel
+    ├── ContenidoScreen.kt                  # Pantalla de contenido
+    ├── FavoritasPreferences.kt             # Persistencia de favoritas
+    ├── SupabaseApi.kt                      # API Supabase (opcional)
+    └── SupabaseConfig.kt                    # Configuración Supabase
 ```
 
 ---
 
+<<<<<<< HEAD
 ## 🌟 Funcionalidades Implementadas
 
 ### 📝 1. Registro Diario de Observaciones EVA (Integrante 1)
@@ -96,111 +141,147 @@ com.myciclo.app/
 
 ---
 
+=======
+>>>>>>> 3a8e74c (Se implementan caracteristicas avanzadas, se corrigen los errores de sintaxis y crashes, se integran nuevas validaciones, sistema de favoritos, se agrega un script para generar el apk, se actualiza el sistema de busqueda, filtros por categoria y seccion de favoritos, etc.)
 ## 🔒 Privacidad y Seguridad
 
-- **Diario 100% Local:** Toda la información del ciclo se guarda exclusivamente en la base de datos local (Room) dentro del dispositivo. No se envían datos sensibles a ningún servidor.
-- **Aislamiento de Imágenes:** Las fotografías tomadas se guardan en el directorio privado de la aplicación (`context.filesDir/images`), impidiendo que aparezcan en la galería pública del celular o sean accesibles por otras aplicaciones.
-- **Sin Respaldos en Nube:** Atributo `android:allowBackup="false"` en el archivo `AndroidManifest.xml` para proteger la información íntima de la usuaria.
+### Protección de Datos
+- **Almacenamiento 100% Local:** Toda la información del ciclo se guarda exclusivamente en Room Database dentro del dispositivo
+- **Aislamiento de Imágenes:** Fotografías almacenadas en directorio privado (`context.filesDir/images`), no accesible desde galería pública
+- **Sin Respaldos Automáticos:** `android:allowBackup="false"` en AndroidManifest.xml para proteger datos íntimos
+- **Permisos Mínimos:** Solo solicita permisos necesarios (cámara, notificaciones)
+
+### Seguridad de Código
+- Manejo seguro de excepciones en parseo de fechas y datos
+- Validación de entradas de usuario
+- Fallback local cuando API no está disponible
+- Configuración de keystore excluida del repositorio
 
 ---
 
-## 🔌 Conexión a la API Backend
+## 🔌 Integración con Backend
 
-La aplicación está preparada para consumir la API de guías educativas:
-- **URL Base (Emulador Android):** `http://10.0.2.2:8080/`
+### API Spring Boot (Desarrollo Local)
+- **URL Base (Emulador):** `http://10.0.2.2:8080/api/`
 - **Endpoint:** `GET /api/guias`
-- **Estructura JSON:**
-  ```json
-  [
-    {
-      "id": 1,
-      "titulo": "Cómo usar EVA en 4 pasos",
-      "contenido": "...",
-      "categoria": "Manual"
-    }
-  ]
-  ```
+- **Uso:** Desarrollo y pruebas en emulador Android
 
-### Alternativa en la nube: Supabase
-
-El Spring Boot en `10.0.2.2:8080` solo responde en el emulador del PC que tiene el servidor levantado. Para demostrar la app en un celular real hace falta una API accesible desde internet, así que se agregó Supabase como **segunda fuente remota**, usando la misma interfaz `ContenidoRepository`.
-
-Supabase publica una API REST automática sobre la tabla, así que no hay backend nuevo que escribir:
+### Supabase (Producción Opcional)
+Para demostraciones en dispositivos reales sin servidor local:
 - **Endpoint:** `GET https://<proyecto>.supabase.co/rest/v1/guias?select=*&order=id`
-- **Headers:** `apikey` y `Authorization: Bearer <anon key>`
-- **JSON de respuesta:** el mismo de arriba, porque las columnas de la tabla se llaman igual que los campos de `Guia.kt`
+- **Activación:** Configurar URL y llave anon en `SupabaseConfig.kt`
+- **Seguridad:** Solo usa llave `anon` con políticas RLS de solo lectura
 
-Pasos para activarlo:
-1. Crear el proyecto en [supabase.com](https://supabase.com) (plan gratuito).
-2. En el **SQL Editor**, ejecutar `docs/supabase.sql`. Eso crea la tabla `guias`, activa Row Level Security y deja una política de solo lectura para el rol `anon`.
-3. Copiar la URL y la llave **anon** desde *Project Settings → API* a `contenido/SupabaseConfig.kt`.
-
-Mientras `SupabaseConfig` esté vacío la app sigue usando el Spring Boot: `repositorioRemoto()` elige la fuente según si hay URL y llave configuradas, y si ninguna responde quedan las guías locales. Las tres fuentes conviven sin tocarse.
-
-> **Importante:** en la app va solo la llave `anon`, que es pública y está limitada por las políticas RLS. La llave `service_role` nunca debe ir en el código de la app porque permite escribir toda la base.
+### Estrategia de Fallback
+1. **Primero:** Intenta API configurada (Supabase o Spring Boot)
+2. **Si falla:** Carga guías locales automáticamente
+3. **Resultado:** La app siempre funciona, sin interrupciones
 
 ---
 
-## 🧪 Pruebas y Validación
+## 🧪 Desarrollo y Compilación
 
-### Requisitos de Java
-**IMPORTANTE:** Este proyecto requiere Java 17 o superior.
-- **Versión de compilación:** la fija `jvmToolchain(17)` en `app/build.gradle.kts`, no hay que configurar nada.
-- **Nota:** Java 25 NO es compatible con Kotlin 2.0.21 - se debe usar Java 17-22.
-- **Si tu Java por defecto no es 17-22:** pon la ruta en tu archivo personal `C:\Users\<tu usuario>\.gradle\gradle.properties`, **no** en el `gradle.properties` del proyecto. Esa ruta cambia en cada PC y si se sube rompe el build de los demás (`Java home supplied is invalid`).
+### Requisitos del Sistema
+- **Java:** 17, 21 o 22 (Java 25 NO es compatible)
+- **Android Studio:** Koala o superior
+- **Android SDK:** API 33+ (Android 13+)
+- **Gradle:** 8.11.1 (configurado en wrapper)
 
-### Compilación del Proyecto Android
-Para compilar el proyecto Android desde la línea de comandos:
+### Compilación
+
+#### APK Debug (Desarrollo)
 ```bash
-# En Windows (PowerShell o CMD) - RECOMENDADO
+# Script automatizado (Windows)
 compile-android.bat
 
-# O manualmente (evita problemas de lint):
+# O manualmente
 ./gradlew assembleDebug -x lint
+```
 
-# Solo pruebas unitarias:
+#### APK Release (Producción)
+```bash
+# Script automatizado (Windows)
+generar-apk-release.bat
+
+# O manualmente
+./gradlew assembleRelease
+```
+
+**Ubicación del APK:** `app/build/outputs/apk/release/app-release.apk`
+
+### Pruebas Unitarias
+```bash
 ./gradlew test
 ```
 
-### Compilación del Backend Spring Boot
-El backend requiere Maven. Si no está instalado, descárgalo desde https://maven.apache.org/download.cgi
+### Verificación de Firma
 ```bash
-# En Windows (PowerShell o CMD)
-compile-backend.bat
-
-# O manualmente con Maven instalado:
-cd backend-myciclo
-mvn clean package
-java -jar target/api-guias-1.0.0.jar
+jarsigner -verify -verbose -certs app/build/outputs/apk/release/app-release.apk
 ```
 
-### APK Firmado en Modo Release (entregable del caso)
+---
 
-El caso pide entregar el APK **firmado en modo release**, así que el proyecto ya trae el `signingConfig` listo en `app/build.gradle.kts`.
+## 📱 Instalación y Uso
 
-```bash
-./gradlew assembleRelease
-# queda en: app/build/outputs/apk/release/app-release.apk
-```
+### Instalación en Dispositivo
+1. Abrir el proyecto en Android Studio
+2. Conectar dispositivo físico o iniciar emulador (Android 13+)
+3. Ejecutar `Run 'app'` o instalar el APK firmado
 
-Las credenciales se leen de `keystore.properties`, en la raíz del proyecto. Ese archivo y el `.jks` **no están en el repositorio** (los dos en `.gitignore`), porque el `.jks` es la llave con la que se firma la app: si se sube, cualquiera puede firmar una aplicación haciéndose pasar por nosotros.
+### Configuración Inicial
+- Otorgar permisos de cámara y notificaciones cuando se soliciten
+- Configurar hora del recordatorio en Ajustes (por defecto: 09:00 AM)
+- Registrar primera observación para comenzar a usar el calendario
 
-Para compilar un release firmado en tu PC:
-1. Pedirle al grupo el archivo `myciclo-release.jks` y las claves (por fuera de Git).
-2. Dejar el `.jks` en la raíz del proyecto, junto a `settings.gradle.kts`.
-3. Copiar `keystore.properties.ejemplo` como `keystore.properties` y completar las claves.
+### Uso Principal
+1. **Registrar:** Presionar botón "+" → Completar formulario → Guardar
+2. **Ver Calendario:** Navegar por meses → Tocar día para ver detalle
+3. **Aprender:** Ir a "Aprende" → Buscar/filtrar guías → Marcar favoritas
+4. **Ajustes:** Botón ⚙️ en TopAppBar → Configurar notificaciones
 
-Si no tienes esos archivos el proyecto compila igual, pero el APK de release sale **sin firmar**: sirve para probar, no para entregar.
+---
 
-Para comprobar que un APK quedó firmado:
-```bash
-apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
-```
+## 🛠️ Scripts de Automatización
 
-> **Cuidado:** guarden una copia del `.jks` y de sus claves. Si se pierden no se puede volver a firmar con la misma llave, y Android considera una app firmada con otra llave como una aplicación distinta.
+### compile-android.bat
+Compila el APK debug con Java 21 configurado automáticamente.
 
-### Prueba en Dispositivo o Emulador
-1. Abrir el proyecto en **Android Studio**.
-2. Seleccionar un emulador o dispositivo físico con Android 13+ (API 33+).
-3. Ejecutar la aplicación (`Run 'app'`).
-4. Para probar la captura con cámara en emulador, asegurar que el AVD tenga configurada la cámara en las opciones del emulador (*VirtualScene* o *Emulated*).
+### compile-backend.bat
+Compila el backend Spring Boot (requiere Maven instalado).
+
+### generar-apk-release.bat
+Genera el APK firmado en modo release con verificación de firma.
+
+---
+
+## 📝 Notas para Desarrolladores
+
+### Firma del APK
+- Los archivos `myciclo-release.jks` y `keystore.properties` **NO están en el repositorio**
+- Para generar APK firmado, copiar estos archivos del equipo del responsable de firma
+- Configurar `keystore.properties` con las credenciales correctas
+- Guardar copia de seguridad del keystore: si se pierde, no se puede volver a firmar con la misma llave
+
+### Configuración de Java
+- El proyecto usa Java 21 por defecto (configurado en `gradle.properties`)
+- Si tu Java por defecto no es compatible, configura en tu gradle personal: `~/.gradle/gradle.properties`
+- NO modificar `gradle.properties` del proyecto (rompe el build de otros desarrolladores)
+
+### Lint
+- Lint está deshabilitado en build para evitar problemas de file lock en Windows
+- Para análisis de lint, ejecutar: `./gradlew lintDebug` manualmente
+
+---
+
+## 📄 Licencia
+
+Proyecto desarrollado para el caso empresarial DSY1105, Grupo 6. Universidad Duoc UC.
+
+---
+
+## 👥 Equipo de Desarrollo
+
+**Grupo 6 - DSY1105**
+- Integrante 1: Módulo Registro
+- Integrante 2: Módulo Calendario
+- Integrante 3: Módulo Contenido y Notificaciones

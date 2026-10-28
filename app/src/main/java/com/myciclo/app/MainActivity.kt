@@ -19,7 +19,7 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { concedido ->
         if (concedido) {
-            NotificacionHelper.programarRecordatorioDiario(this)
+            NotificacionHelper.sincronizarNotificacion(this)
         }
     }
 
@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
         // Crear el canal de notificaciones
         NotificacionHelper.crearCanal(this)
 
-        // Pedir permiso y programar el recordatorio
+        // Pedir permiso y sincronizar el recordatorio según preferencias
         pedirPermisoYProgramar()
 
         setContent {
@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
                 ) == PackageManager.PERMISSION_GRANTED -> {
-                    NotificacionHelper.programarRecordatorioDiario(this)
+                    NotificacionHelper.sincronizarNotificacion(this)
                 }
                 else -> {
                     permisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
             }
         } else {
             // Android 12 o inferior: no necesita permiso especial
-            NotificacionHelper.programarRecordatorioDiario(this)
+            NotificacionHelper.sincronizarNotificacion(this)
         }
     }
 }

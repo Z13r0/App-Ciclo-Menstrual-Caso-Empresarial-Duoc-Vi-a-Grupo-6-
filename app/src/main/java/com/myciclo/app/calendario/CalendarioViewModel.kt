@@ -14,6 +14,13 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import kotlin.math.abs
+import kotlin.math.roundToInt
+
+data class EstadisticasCiclo(
+    val promedio: Int,
+    val variacion: Int
+)
 
 /**
  * Estado que necesita la pantalla del calendario.
@@ -22,6 +29,7 @@ import java.time.temporal.ChronoUnit
  * - ventana: ventana fértil calculada con EVA
  * - diaCiclo / fase: información del día de hoy
  * - promedioCiclo: duración promedio en días (null si no hay suficientes datos)
+ * - variacionCiclo: variación en días (±días) entre los ciclos registrados
  */
 data class CalendarioEstado(
     val dias: Map<LocalDate, Nivel> = emptyMap(),
@@ -29,7 +37,8 @@ data class CalendarioEstado(
     val ventana: Ventana? = null,
     val diaCiclo: Int? = null,
     val fase: Fase? = null,
-    val promedioCiclo: Int? = null
+    val promedioCiclo: Int? = null,
+    val variacionCiclo: Int? = null
 )
 
 class CalendarioViewModel(app: Application) : AndroidViewModel(app) {
@@ -44,13 +53,15 @@ class CalendarioViewModel(app: Application) : AndroidViewModel(app) {
             } else {
                 val dias = lista.mapNotNull {
                     val fechaParsed = FechaUtils.parsear(it.fecha) ?: return@mapNotNull null
-                    DiaObservado(fechaParsed, Nivel.valueOf(it.nivel))
+                    val nivelParsed = try { Nivel.valueOf(it.nivel) } catch (_: Exception) { Nivel.NULO }
+                    DiaObservado(fechaParsed, nivelParsed)
                 }
                 // El ciclo actual lo marca el registro más nuevo (la lista viene ordenada DESC)
                 val inicioCiclo = lista.firstNotNullOfOrNull { FechaUtils.parsear(it.inicioPeriodo) } ?: LocalDate.now()
                 val hoy = LocalDate.now()
                 val ventana = calcularVentana(dias, inicioCiclo)
                 val dia = diaDelCiclo(inicioCiclo, hoy)
+                val estadisticas = calcularEstadisticasCiclo(lista)
 
                 CalendarioEstado(
                     dias = dias.associateBy({ it.fecha }, { it.nivel }),
@@ -60,21 +71,23 @@ class CalendarioViewModel(app: Application) : AndroidViewModel(app) {
                     ventana = ventana,
                     diaCiclo = dia,
                     fase = faseDelCiclo(dia, ventana, hoy),
-                    promedioCiclo = calcularPromedioCiclo(lista)
+                    promedioCiclo = estadisticas?.promedio,
+                    variacionCiclo = estadisticas?.variacion
                 )
             }
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, CalendarioEstado())
 
     /**
-     * Calcula la duración promedio de los ciclos.
-     * Toma los inicios de período distintos, los ordena y mide la diferencia entre uno y el siguiente.
-     * Solo acepta duraciones entre 21 y 45 días (valores realistas).
-     * Necesita al menos 2 inicios distintos; si no, devuelve null.
+     * Calcula la duración promedio y la variación (desviación máxima en días) entre ciclos.
+     * Toma los inicios de período distintos, los ordena y mide la diferencia entre cada período consecutivo.
+     * Acepta duraciones realistas entre 21 y 45 días.
+     * Requiere al menos 2 fechas de inicio distintas para calcular estadísticos.
      */
-    private fun calcularPromedioCiclo(registros: List<RegistroEntity>): Int? {
+    private fun calcularEstadisticasCiclo(registros: List<RegistroEntity>): EstadisticasCiclo? {
         val inicios = registros
             .map { it.inicioPeriodo }
+            .filter { it.isNotBlank() }
             .distinct()
             .mapNotNull { FechaUtils.parsear(it) }
             .sorted()
@@ -83,8 +96,17 @@ class CalendarioViewModel(app: Application) : AndroidViewModel(app) {
 
         val duraciones = inicios.zipWithNext { anterior, siguiente ->
             ChronoUnit.DAYS.between(anterior, siguiente).toInt()
-        }.filter { (it in 21..45) }
+        }.filter { it in 21..45 }
 
-        return if (duraciones.isEmpty()) null else duraciones.average().toInt()
+        if (duraciones.isEmpty()) return null
+
+        val promedioDouble = duraciones.average()
+        val promedio = promedioDouble.roundToInt()
+        val variacion = duraciones.maxOf { abs(it - promedio) }
+
+        return EstadisticasCiclo(
+            promedio = promedio,
+            variacion = variacion
+        )
     }
 }

@@ -44,7 +44,7 @@ class RecordatorioReceiver : BroadcastReceiver() {
         try {
             NotificationManagerCompat.from(context)
                 .notify(NotificacionHelper.NOTIF_ID, notificacion)
-        } catch (e: SecurityException) {
+        } catch (_: SecurityException) {
             // Permiso no concedido; se ignora para no crashear
         }
     }

@@ -6,9 +6,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -27,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.myciclo.app.calendario.CalendarioScreen
 import com.myciclo.app.contenido.ContenidoScreen
+import com.myciclo.app.notificaciones.AjustesScreen
 import com.myciclo.app.registro.RegistroScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,6 +65,18 @@ fun AppNavegacion() {
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(start = 12.dp)
                     )
+                },
+                actions = {
+                    IconButton(
+                        onClick = { irA(Screen.Ajustes.route) },
+                        modifier = Modifier.padding(end = 4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Settings,
+                            contentDescription = "Ajustes de Notificación",
+                            tint = if (rutaActual == Screen.Ajustes.route) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -117,6 +132,7 @@ fun AppNavegacion() {
             composable(Screen.Calendario.route) { CalendarioScreen() }
             composable(Screen.Registro.route) { RegistroScreen() }
             composable(Screen.Contenido.route) { ContenidoScreen() }
+            composable(Screen.Ajustes.route) { AjustesScreen() }
         }
     }
 }

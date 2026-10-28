@@ -138,12 +138,21 @@ fun CalendarioScreen(vm: CalendarioViewModel = viewModel()) {
                 }
 
                 val promedio = estado.promedioCiclo
-                if (promedio != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                val variacion = estado.variacionCiclo
+                if (promedio != null && variacion != null) {
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Promedio de ciclo: $promedio días",
+                        text = "📊 Ciclo promedio: $promedio días  ·  Variación: ±$variacion días",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
+                    )
+                } else {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Se necesitan más registros para calcular la regularidad.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f)
                     )
                 }
             }
@@ -356,8 +365,13 @@ fun DetalleDia(
                         color = MaterialTheme.colorScheme.secondaryContainer,
                         shape = RoundedCornerShape(8.dp)
                     ) {
+                        val nivelTexto = try {
+                            Nivel.valueOf(registro.nivel).texto
+                        } catch (_: Exception) {
+                            "Desconocido"
+                        }
                         Text(
-                            text = "Observación EVA: " + Nivel.valueOf(registro.nivel).texto,
+                            text = "Observación EVA: $nivelTexto",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(8.dp)

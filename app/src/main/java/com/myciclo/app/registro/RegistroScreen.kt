@@ -23,8 +23,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -55,31 +57,49 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.myciclo.app.ui.componentes.AvisoEva
 import com.myciclo.app.ui.theme.EvaAltoColor
 import com.myciclo.app.ui.theme.EvaMedioColor
 import com.myciclo.app.ui.theme.EvaNuloColor
-import java.time.LocalDate
+import com.myciclo.app.util.FechaUtils
 import kotlinx.coroutines.delay
 
 /**
  * Pantalla de registro diario de observaciones EVA.
- * Diseñada con Material 3 para brindar una experiencia visual limpia y atractiva.
+ * Integrada totalmente con FechaUtils y filtrado/búsqueda con estado en ViewModel.
  */
 @Composable
 fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
     val context = LocalContext.current
     val registros by vm.registros.collectAsState()
+    val busqueda by vm.busqueda.collectAsState()
+    val filtroNivel by vm.filtroNivel.collectAsState()
     val mensaje by vm.mensaje.collectAsState()
 
     // Estado del formulario
-    var fecha by remember { mutableStateOf(LocalDate.now().toString()) }
+    var fecha by remember { mutableStateOf(FechaUtils.hoyIso()) }
     var inicioPeriodo by remember { mutableStateOf("") }
     var nivel by remember { mutableStateOf<Nivel?>(null) }
     var notas by remember { mutableStateOf("") }
     var foto by remember { mutableStateOf("") }
     var editando by remember { mutableStateOf(false) }
+
+    // Autocompletar inicio de período si la lista de registros ya existe
+    LaunchedEffect(registros) {
+        if (inicioPeriodo.isBlank() && registros.isNotEmpty()) {
+            inicioPeriodo = registros.first().inicioPeriodo
+        }
+    }
+
+    // Foto ampliada para diálogo modal
+    var fotoAmpliada by remember { mutableStateOf<String?>(null) }
+
+    // Validaciones con FechaUtils
+    val fechaValida = FechaUtils.esValida(fecha)
+    val inicioValido = FechaUtils.esValida(inicioPeriodo)
+    val puedeGuardar = nivel != null && fechaValida && inicioValido
 
     // Launchers de cámara y galería
     val archivoFoto = remember { mutableStateOf(Fotos.archivoNuevo(context)) }
@@ -108,23 +128,20 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
     fun cargarParaEditar(reg: RegistroEntity) {
         fecha = reg.fecha
         inicioPeriodo = reg.inicioPeriodo
-        nivel = Nivel.valueOf(reg.nivel)
+        nivel = try { Nivel.valueOf(reg.nivel) } catch (_: Exception) { Nivel.NULO }
         notas = reg.notas
         foto = reg.foto
         editando = true
     }
 
     fun limpiarFormulario() {
-        fecha = com.myciclo.app.util.FechaUtils.hoyIso()
-        inicioPeriodo = ""
+        fecha = FechaUtils.hoyIso()
+        inicioPeriodo = registros.firstOrNull()?.inicioPeriodo ?: ""
         nivel = null
         notas = ""
         foto = ""
         editando = false
     }
-
-    val fechaValida = com.myciclo.app.util.FechaUtils.esValida(fecha) && com.myciclo.app.util.FechaUtils.esValida(inicioPeriodo)
-    val puedeGuardar = nivel != null && inicioPeriodo.isNotBlank() && fechaValida
 
     LaunchedEffect(mensaje) {
         if (mensaje.isNotEmpty()) {
@@ -174,14 +191,32 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
                     onValueChange = { fecha = it },
                     label = { Text("Fecha de registro (yyyy-MM-dd)") },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !editando
+                    enabled = !editando,
+                    isError = fecha.isNotBlank() && !fechaValida,
+                    supportingText = {
+                        if (fecha.isNotBlank() && !fechaValida) {
+                            Text(
+                                text = "Formato de fecha inválido (ej: yyyy-MM-dd o dd/MM/yyyy)",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
                 )
 
                 OutlinedTextField(
                     value = inicioPeriodo,
                     onValueChange = { inicioPeriodo = it },
                     label = { Text("Inicio del período (yyyy-MM-dd)") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = inicioPeriodo.isNotBlank() && !inicioValido,
+                    supportingText = {
+                        if (inicioPeriodo.isNotBlank() && !inicioValido) {
+                            Text(
+                                text = "Formato de fecha inválido (ej: yyyy-MM-dd o dd/MM/yyyy)",
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
                 )
 
                 Text(
@@ -243,7 +278,8 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(160.dp)
-                                .clip(RoundedCornerShape(8.dp)),
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { fotoAmpliada = foto },
                             contentScale = ContentScale.Crop
                         )
                     }
@@ -253,8 +289,10 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = {
-                            vm.guardar(fecha, inicioPeriodo, nivel!!, notas, foto)
-                            limpiarFormulario()
+                            if (puedeGuardar) {
+                                vm.guardar(fecha, inicioPeriodo, nivel!!, notas, foto)
+                                limpiarFormulario()
+                            }
                         },
                         enabled = puedeGuardar,
                         modifier = Modifier.weight(1f)
@@ -271,7 +309,7 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
                 if (mensaje.isNotEmpty()) {
                     Text(
                         text = mensaje,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = if (mensaje.startsWith("Error")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -280,18 +318,44 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
 
-        // ---------- HISTORIAL DE REGISTROS ----------
-        Text(
-            text = "Historial de Observaciones",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
+        // ---------- FILTRADO Y BÚSQUEDA DE HISTORIAL ----------
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                text = "Historial de Observaciones",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            OutlinedTextField(
+                value = busqueda,
+                onValueChange = { vm.actualizarBusqueda(it) },
+                placeholder = { Text("Buscar en notas...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                FilterChip(
+                    selected = filtroNivel == null,
+                    onClick = { vm.actualizarFiltroNivel(null) },
+                    label = { Text("Todos") }
+                )
+                Nivel.entries.forEach { n ->
+                    FilterChip(
+                        selected = filtroNivel == n,
+                        onClick = { vm.actualizarFiltroNivel(if (filtroNivel == n) null else n) },
+                        label = { Text(n.texto) }
+                    )
+                }
+            }
+        }
 
         if (registros.isEmpty()) {
             Text(
-                text = "Aún no hay registros guardados. Añade tu primera observación arriba.",
+                text = "No se encontraron registros.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -304,8 +368,56 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
                     CardRegistro(
                         registro = reg,
                         onEditar = { cargarParaEditar(reg) },
-                        onBorrar = { vm.borrar(reg.fecha) }
+                        onBorrar = { vm.borrar(reg.fecha) },
+                        onVerFoto = { path -> fotoAmpliada = path }
                     )
+                }
+            }
+        }
+    }
+
+    // ---------- VISOR DE FOTO AMPLIADA EN DIÁLOGO MODAL ----------
+    fotoAmpliada?.let { path ->
+        val bmp = remember(path) { BitmapFactory.decodeFile(path) }
+        Dialog(onDismissRequest = { fotoAmpliada = null }) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Fotografía ampliada",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(onClick = { fotoAmpliada = null }) {
+                            Icon(Icons.Default.Close, contentDescription = "Cerrar")
+                        }
+                    }
+                    if (bmp != null) {
+                        Image(
+                            bitmap = bmp.asImageBitmap(),
+                            contentDescription = "Fotografía en tamaño completo",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                            contentScale = ContentScale.Fit
+                        )
+                    } else {
+                        Text("No se pudo cargar la imagen.", style = MaterialTheme.typography.bodyMedium)
+                    }
+                    TextButton(onClick = { fotoAmpliada = null }) { Text("Cerrar") }
                 }
             }
         }
@@ -316,12 +428,17 @@ fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
 private fun CardRegistro(
     registro: RegistroEntity,
     onEditar: () -> Unit,
-    onBorrar: () -> Unit
+    onBorrar: () -> Unit,
+    onVerFoto: (String) -> Unit
 ) {
     var confirmarBorrado by remember { mutableStateOf(false) }
+<<<<<<< HEAD
     // controla si se esta viendo la foto en grande
     var verFoto by remember { mutableStateOf(false) }
     val nivelEnum = try { Nivel.valueOf(registro.nivel) } catch (e: Exception) { Nivel.NULO }
+=======
+    val nivelEnum = try { Nivel.valueOf(registro.nivel) } catch (_: Exception) { Nivel.NULO }
+>>>>>>> 3a8e74c (Se implementan caracteristicas avanzadas, se corrigen los errores de sintaxis y crashes, se integran nuevas validaciones, sistema de favoritos, se agrega un script para generar el apk, se actualiza el sistema de busqueda, filtros por categoria y seccion de favoritos, etc.)
 
     val badgeColor = when (nivelEnum) {
         Nivel.ALTO -> EvaAltoColor
@@ -388,6 +505,23 @@ private fun CardRegistro(
                     )
                 }
             }
+
+            if (registro.foto.isNotBlank()) {
+                val thumbnail = remember(registro.foto) { BitmapFactory.decodeFile(registro.foto) }
+                if (thumbnail != null) {
+                    Image(
+                        bitmap = thumbnail.asImageBitmap(),
+                        contentDescription = "Ver foto",
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { onVerFoto(registro.foto) },
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+            }
+
             IconButton(onClick = onEditar) {
                 Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
             }
@@ -415,6 +549,7 @@ private fun CardRegistro(
             }
         )
     }
+<<<<<<< HEAD
 
     // la foto en grande, se abre al tocar la miniatura
     if (verFoto) {
@@ -445,3 +580,6 @@ private fun CardRegistro(
         )
     }
 }
+=======
+}
+>>>>>>> 3a8e74c (Se implementan caracteristicas avanzadas, se corrigen los errores de sintaxis y crashes, se integran nuevas validaciones, sistema de favoritos, se agrega un script para generar el apk, se actualiza el sistema de busqueda, filtros por categoria y seccion de favoritos, etc.)
