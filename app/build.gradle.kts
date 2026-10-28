@@ -7,15 +7,13 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// los datos de la firma viven en keystore.properties, que NO se sube al repo
-// si el archivo no esta, el release se arma sin firmar y nada se cae:
-// asi el que no tenga la llave igual puede compilar y sincronizar el proyecto
 val archivoFirma = rootProject.file("keystore.properties")
 val datosFirma = Properties()
 val hayFirma = archivoFirma.exists()
-if (hayFirma) {
-    datosFirma.load(archivoFirma.inputStream())
-}
+if (hayFirma) datosFirma.load(archivoFirma.inputStream())
+
+fun setting(name: String): String =
+    (project.findProperty(name) as String?) ?: System.getenv(name) ?: ""
 
 android {
     namespace = "com.myciclo.app"
@@ -27,11 +25,18 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "SUPABASE_URL", "\"${setting("SUPABASE_URL")}\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"${setting("SUPABASE_ANON_KEY")}\"")
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = true
+        viewBinding = true
     }
 
     signingConfigs {
         create("release") {
-            // solo se llena si existe keystore.properties
             if (hayFirma) {
                 storeFile = rootProject.file(datosFirma.getProperty("storeFile"))
                 storePassword = datosFirma.getProperty("storePassword")
@@ -45,30 +50,13 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // sin el archivo de claves el apk sale sin firmar, pero el build no falla
-            if (hayFirma) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            if (hayFirma) signingConfig = signingConfigs.getByName("release")
         }
     }
-    lint {
-        checkReleaseBuilds = false
-        abortOnError = false
-        checkDependencies = false
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-    buildFeatures {
-        compose = true
-    }
-    testOptions {
-        unitTests.isReturnDefaultValues = true
-    }
+    lint { checkReleaseBuilds = false; abortOnError = false; checkDependencies = false }
+    compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+    kotlinOptions { jvmTarget = "17" }
+    testOptions { unitTests.isReturnDefaultValues = true }
 }
 
 dependencies {
@@ -85,14 +73,11 @@ dependencies {
     implementation(libs.androidx.compose.material3.windowsizeclass)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.coroutines.android)
-
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
-
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
-
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     debugImplementation(libs.androidx.compose.ui.tooling)

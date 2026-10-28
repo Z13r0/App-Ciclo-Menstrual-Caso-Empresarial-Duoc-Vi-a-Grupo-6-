@@ -1,7 +1,7 @@
 package com.myciclo.app.contenido
 
-import android.content.Context
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,13 +29,13 @@ sealed class ContenidoEstado {
 
 // api es la fuente remota y repositorioRemoto decide si es supabase o el spring boot
 // local son las guias que estan escritas en el codigo, se usan si la remota falla
-class ContenidoViewModel(
-    context: Context,
+class ContenidoViewModel @JvmOverloads constructor(
+    app: Application,
     private val api: ContenidoRepository = repositorioRemoto(),
     private val local: ContenidoRepository = ContenidoLocalRepository()
-) : ViewModel() {
+) : AndroidViewModel(app) {
 
-    private val prefs = FavoritasPreferences(context)
+    private val prefs = FavoritasPreferences(app)
 
     private val _busqueda = MutableStateFlow("")
     val busqueda: StateFlow<String> = _busqueda.asStateFlow()

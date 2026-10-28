@@ -53,11 +53,8 @@ import com.myciclo.app.ui.componentes.AvisoEva
  * filtro por categorías con FilterChips, sección de favoritas persistente y modal de notificaciones.
  */
 @Composable
-fun ContenidoScreen() {
+fun ContenidoScreen(vm: ContenidoViewModel = viewModel()) {
     val context = LocalContext.current
-    val vm: ContenidoViewModel = viewModel {
-        ContenidoViewModel(context)
-    }
     val estado by vm.estado.collectAsState()
     val busqueda by vm.busqueda.collectAsState()
     val categoriaFiltro by vm.categoriaFiltro.collectAsState()

@@ -1,39 +1,37 @@
--- tabla de guias educativas para la app myciclo
--- esto se pega en el SQL Editor de supabase y se ejecuta una vez
--- supabase publica la tabla sola en /rest/v1/guias, no hay que escribir backend
-
+-- Contenido educativo público
 create table if not exists guias (
-  id        bigint generated always as identity primary key,
-  titulo    text not null,
+  id bigint generated always as identity primary key,
+  titulo text not null,
   contenido text not null,
   categoria text not null
 );
-
--- las columnas se llaman igual que los campos de Guia.kt
--- si se les cambia el nombre hay que cambiar tambien el data class
-
--- row level security prendido: sin politicas nadie puede leer ni escribir
--- supabase lo pide asi, si no la tabla queda abierta para cualquiera
 alter table guias enable row level security;
+drop policy if exists "lectura publica de guias" on guias;
+create policy "lectura publica de guias" on guias for select to anon, authenticated using (true);
 
--- la app solo lee, y el contenido educativo es publico, por eso basta un select para anon
--- no creamos politica de insert ni de update: las guias las carga el perfil
--- administrador desde el panel de supabase, que es el perfil secundario del caso
-create policy "lectura publica de guias"
-  on guias
-  for select
-  to anon
-  using (true);
+-- Datos privados: cada fila pertenece a la usuaria autenticada.
+create table if not exists registros_ciclo (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  fecha date not null,
+  inicio_periodo date not null,
+  nivel text not null check (nivel in ('ALTO', 'MEDIO', 'NULO')),
+  notas text not null default '',
+  foto_path text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, fecha)
+);
 
--- un par de filas de ejemplo para probar que la app las trae
--- las demas se cargan desde el panel, o se copian de ContenidoLocalRepository
-insert into guias (titulo, contenido, categoria) values
-  ('Como usar EVA en 4 pasos',
-   'Tomar la muestra, dejarla secar, observar el patron con el aumento 50x y registrar el resultado en la app.',
-   'Manual'),
-  ('EVA no es un metodo anticonceptivo',
-   'EVA es una herramienta de autoconocimiento y educacion. No reemplaza una evaluacion clinica.',
-   'Preguntas frecuentes');
+alter table registros_ciclo enable row level security;
+drop policy if exists "registros propios select" on registros_ciclo;
+drop policy if exists "registros propios insert" on registros_ciclo;
+drop policy if exists "registros propios update" on registros_ciclo;
+drop policy if exists "registros propios delete" on registros_ciclo;
+create policy "registros propios select" on registros_ciclo for select to authenticated using (auth.uid() = user_id);
+create policy "registros propios insert" on registros_ciclo for insert to authenticated with check (auth.uid() = user_id);
+create policy "registros propios update" on registros_ciclo for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "registros propios delete" on registros_ciclo for delete to authenticated using (auth.uid() = user_id);
 
--- para comprobar que quedo publicada, desde el navegador o con curl:
--- https://<proyecto>.supabase.co/rest/v1/guias?select=*&apikey=<anon key>
+-- Las fotos deben ir a un bucket privado con políticas equivalentes a auth.uid().
+-- Nunca expongas la service_role en la app Android.

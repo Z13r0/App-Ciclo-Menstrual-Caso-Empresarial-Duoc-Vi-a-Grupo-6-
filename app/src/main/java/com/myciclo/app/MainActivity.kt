@@ -1,20 +1,48 @@
 package com.myciclo.app
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import com.myciclo.app.auth.AuthRepository
+import com.myciclo.app.auth.AuthScreen
 import com.myciclo.app.navegacion.AppNavegacion
 import com.myciclo.app.notificaciones.NotificacionHelper
+import com.myciclo.app.ui.theme.FondoFresco
 import com.myciclo.app.ui.theme.MyCicloTheme
+import com.myciclo.app.ui.theme.RosaPrimario
+import kotlinx.coroutines.launch
+import kotlin.text.compareTo
 
 class MainActivity : ComponentActivity() {
 
-    // Launcher para pedir el permiso de notificaciones (Android 13+)
+    private lateinit var auth: AuthRepository
+
+    // Estado de la UI (observable por Compose)
+    private val autenticado = mutableStateOf(false)
+    private val cargandoSesion = mutableStateOf(true)
+    private val userId = mutableStateOf<String?>(null)
+    private val restableciendoPassword = mutableStateOf(false)
+
+    /**
+     * Launcher para pedir el permiso POST_NOTIFICATIONS en runtime (obligatorio desde Android 13).
+     * Si la usuaria lo concede, programamos el recordatorio diario.
+     */
     private val permisoNotificaciones = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { concedido ->
@@ -25,23 +53,101 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        auth = AuthRepository(this)
 
-        // Crear el canal de notificaciones
+        // Si la app se abrió desde el correo (deep link), procesamos el callback de inmediato
+        if (intent?.data != null) {
+            auth.acceptCallback(intent.data!!)
+        }
+        restableciendoPassword.value = auth.passwordResetPending()
+
+        // Intentamos renovar la sesión con el refresh_token guardado
+        lifecycleScope.launch {
+            val sesionValida = auth.restoreSession()
+            // Solo consideramos autenticada si hay sesión Y no estamos en medio de un recovery
+            autenticado.value = sesionValida && !restableciendoPassword.value
+            userId.value = auth.currentUserId()
+
+            // Si había registros locales antiguos (antes de la auth), los asociamos a esta cuenta
+            if (autenticado.value && userId.value != null) {
+                auth.claimLegacyRecordsIfNeeded()
+            }
+            cargandoSesion.value = false
+        }
+
+        // Canal de notificaciones (requerido desde Android 8)
         NotificacionHelper.crearCanal(this)
-
-        // Pedir permiso y sincronizar el recordatorio según preferencias
         pedirPermisoYProgramar()
 
         setContent {
             MyCicloTheme {
-                AppNavegacion()
+                when {
+                    // Mientras renovamos la sesión: fondo de marca + indicador rosa
+                    cargandoSesion.value -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(FondoFresco),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = RosaPrimario)
+                        }
+                    }
+
+                    // Sesión válida → navegación principal (calendario, registro, etc.)
+                    autenticado.value && userId.value != null -> {
+                        AppNavegacion(
+                            userId = userId.value!!,
+                            onLogout = {
+                                lifecycleScope.launch {
+                                    auth.logout()
+                                    autenticado.value = false
+                                    userId.value = null
+                                }
+                            }
+                        )
+                    }
+
+                    // Sin sesión o en recovery → pantalla de autenticación
+                    else -> {
+                        AuthScreen(
+                            repository = auth,
+                            resetPassword = restableciendoPassword.value
+                        ) {
+                            // Callback cuando el login / cambio de contraseña fue exitoso
+                            lifecycleScope.launch {
+                                auth.claimLegacyRecordsIfNeeded()
+                                userId.value = auth.currentUserId()
+                                autenticado.value = userId.value != null
+                                restableciendoPassword.value = false
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
+    /**
+     * Se llama cuando la app ya estaba abierta y llega un nuevo Intent
+     * (por ejemplo, el deep link de recovery mientras la app está en segundo plano).
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.data != null && auth.acceptCallback(intent.data!!)) {
+            userId.value = auth.currentUserId()
+            restableciendoPassword.value = auth.passwordResetPending()
+            autenticado.value = userId.value != null && !restableciendoPassword.value
+        }
+    }
+
+    /**
+     * Pide el permiso de notificaciones si es necesario y programa el recordatorio diario.
+     * En Android 12 e inferior el permiso no se pide en runtime.
+     */
     private fun pedirPermisoYProgramar() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13 o superior: hay que pedir el permiso en runtime
             when {
                 ContextCompat.checkSelfPermission(
                     this,
@@ -54,7 +160,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         } else {
-            // Android 12 o inferior: no necesita permiso especial
             NotificacionHelper.sincronizarNotificacion(this)
         }
     }

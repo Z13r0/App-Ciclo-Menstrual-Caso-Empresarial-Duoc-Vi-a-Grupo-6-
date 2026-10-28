@@ -57,7 +57,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import android.app.Application
 import androidx.compose.ui.window.Dialog
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.myciclo.app.ui.componentes.AvisoEva
 import com.myciclo.app.ui.theme.EvaAltoColor
@@ -71,7 +74,21 @@ import kotlinx.coroutines.delay
  * Integrada totalmente con FechaUtils y filtrado/búsqueda con estado en ViewModel.
  */
 @Composable
-fun RegistroScreen(vm: RegistroViewModel = viewModel()) {
+fun RegistroScreen(
+    userId: String = "",
+    vm: RegistroViewModel = run {
+        val context = LocalContext.current
+        viewModel(
+            key = "RegistroViewModel_$userId",
+            factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return RegistroViewModel(context.applicationContext as Application, userId) as T
+                }
+            }
+        )
+    }
+) {
     val context = LocalContext.current
     val registros by vm.registros.collectAsState()
     val busqueda by vm.busqueda.collectAsState()
@@ -432,13 +449,7 @@ private fun CardRegistro(
     onVerFoto: (String) -> Unit
 ) {
     var confirmarBorrado by remember { mutableStateOf(false) }
-<<<<<<< HEAD
-    // controla si se esta viendo la foto en grande
-    var verFoto by remember { mutableStateOf(false) }
-    val nivelEnum = try { Nivel.valueOf(registro.nivel) } catch (e: Exception) { Nivel.NULO }
-=======
     val nivelEnum = try { Nivel.valueOf(registro.nivel) } catch (_: Exception) { Nivel.NULO }
->>>>>>> 3a8e74c (Se implementan caracteristicas avanzadas, se corrigen los errores de sintaxis y crashes, se integran nuevas validaciones, sistema de favoritos, se agrega un script para generar el apk, se actualiza el sistema de busqueda, filtros por categoria y seccion de favoritos, etc.)
 
     val badgeColor = when (nivelEnum) {
         Nivel.ALTO -> EvaAltoColor
@@ -459,25 +470,6 @@ private fun CardRegistro(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // miniatura de la foto del patron, solo si ese dia se guardo una
-            if (registro.foto.isNotBlank()) {
-                // remember con la ruta como llave: el archivo se lee una vez por tarjeta
-                // y no en cada vez que compose redibuja la lista
-                val miniatura = remember(registro.foto) { BitmapFactory.decodeFile(registro.foto) }
-                if (miniatura != null) {
-                    Image(
-                        bitmap = miniatura.asImageBitmap(),
-                        contentDescription = "Foto del patron",
-                        // crop para que la miniatura quede cuadrada y pareja en todas las tarjetas
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(52.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { verFoto = true }
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                }
-            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = registro.fecha,
@@ -549,37 +541,4 @@ private fun CardRegistro(
             }
         )
     }
-<<<<<<< HEAD
-
-    // la foto en grande, se abre al tocar la miniatura
-    if (verFoto) {
-        val completa = remember(registro.foto) { BitmapFactory.decodeFile(registro.foto) }
-        AlertDialog(
-            onDismissRequest = { verFoto = false },
-            title = { Text("Patrón del ${registro.fecha}") },
-            text = {
-                if (completa != null) {
-                    Image(
-                        bitmap = completa.asImageBitmap(),
-                        contentDescription = "Foto del patron en grande",
-                        // aca va Fit y no Crop: hay que ver el patron completo,
-                        // si lo recortamos se puede perder justo la parte del helecho
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(320.dp)
-                    )
-                } else {
-                    // pasa si se borro el archivo de la carpeta de la app
-                    Text("No se pudo abrir la foto")
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { verFoto = false }) { Text("Cerrar") }
-            }
-        )
-    }
 }
-=======
-}
->>>>>>> 3a8e74c (Se implementan caracteristicas avanzadas, se corrigen los errores de sintaxis y crashes, se integran nuevas validaciones, sistema de favoritos, se agrega un script para generar el apk, se actualiza el sistema de busqueda, filtros por categoria y seccion de favoritos, etc.)

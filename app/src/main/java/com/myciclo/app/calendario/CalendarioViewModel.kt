@@ -22,15 +22,6 @@ data class EstadisticasCiclo(
     val variacion: Int
 )
 
-/**
- * Estado que necesita la pantalla del calendario.
- * - dias: color de cada celda
- * - detalles: registro completo para el diálogo
- * - ventana: ventana fértil calculada con EVA
- * - diaCiclo / fase: información del día de hoy
- * - promedioCiclo: duración promedio en días (null si no hay suficientes datos)
- * - variacionCiclo: variación en días (±días) entre los ciclos registrados
- */
 data class CalendarioEstado(
     val dias: Map<LocalDate, Nivel> = emptyMap(),
     val detalles: Map<LocalDate, RegistroEntity> = emptyMap(),
@@ -41,11 +32,16 @@ data class CalendarioEstado(
     val variacionCiclo: Int? = null
 )
 
-class CalendarioViewModel(app: Application) : AndroidViewModel(app) {
+class CalendarioViewModel @JvmOverloads constructor(
+    app: Application,
+    userId: String = ""
+) : AndroidViewModel(app) {
 
-    private val repository = RegistroRepository(AppDatabase.obtener(app).registroDao())
+    private val repository = RegistroRepository(
+        AppDatabase.obtener(app).registroDao(),
+        userId
+    )
 
-    // Cada vez que cambia la tabla se recalcula todo
     val estado: StateFlow<CalendarioEstado> = repository.registros
         .map { lista ->
             if (lista.isEmpty()) {
@@ -53,11 +49,18 @@ class CalendarioViewModel(app: Application) : AndroidViewModel(app) {
             } else {
                 val dias = lista.mapNotNull {
                     val fechaParsed = FechaUtils.parsear(it.fecha) ?: return@mapNotNull null
-                    val nivelParsed = try { Nivel.valueOf(it.nivel) } catch (_: Exception) { Nivel.NULO }
+                    val nivelParsed = try {
+                        Nivel.valueOf(it.nivel)
+                    } catch (_: Exception) {
+                        Nivel.NULO
+                    }
                     DiaObservado(fechaParsed, nivelParsed)
                 }
-                // El ciclo actual lo marca el registro más nuevo (la lista viene ordenada DESC)
-                val inicioCiclo = lista.firstNotNullOfOrNull { FechaUtils.parsear(it.inicioPeriodo) } ?: LocalDate.now()
+
+                val inicioCiclo = lista.firstNotNullOfOrNull {
+                    FechaUtils.parsear(it.inicioPeriodo)
+                } ?: LocalDate.now()
+
                 val hoy = LocalDate.now()
                 val ventana = calcularVentana(dias, inicioCiclo)
                 val dia = diaDelCiclo(inicioCiclo, hoy)
@@ -78,12 +81,6 @@ class CalendarioViewModel(app: Application) : AndroidViewModel(app) {
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, CalendarioEstado())
 
-    /**
-     * Calcula la duración promedio y la variación (desviación máxima en días) entre ciclos.
-     * Toma los inicios de período distintos, los ordena y mide la diferencia entre cada período consecutivo.
-     * Acepta duraciones realistas entre 21 y 45 días.
-     * Requiere al menos 2 fechas de inicio distintas para calcular estadísticos.
-     */
     private fun calcularEstadisticasCiclo(registros: List<RegistroEntity>): EstadisticasCiclo? {
         val inicios = registros
             .map { it.inicioPeriodo }
@@ -100,13 +97,9 @@ class CalendarioViewModel(app: Application) : AndroidViewModel(app) {
 
         if (duraciones.isEmpty()) return null
 
-        val promedioDouble = duraciones.average()
-        val promedio = promedioDouble.roundToInt()
+        val promedio = duraciones.average().roundToInt()
         val variacion = duraciones.maxOf { abs(it - promedio) }
 
-        return EstadisticasCiclo(
-            promedio = promedio,
-            variacion = variacion
-        )
+        return EstadisticasCiclo(promedio, variacion)
     }
 }

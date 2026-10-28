@@ -282,3 +282,21 @@ Proyecto desarrollado para el caso empresarial DSY1105, Grupo 6. Universidad Duo
 - Ignacio Vera
 - Sebastian Cerda
 - Benjamin Navarrete
+
+## 🔐 Autenticación y datos reales
+
+La aplicación incorpora autenticación por correo mediante Supabase Auth. Permite crear cuenta, iniciar sesión, renovar la sesión, cerrar sesión, solicitar recuperación de contraseña y establecer una nueva contraseña desde el deep link `myciclo://auth-callback`. La confirmación de correo debe estar activada en Supabase antes de usar el flujo en producción.
+
+La sesión se guarda cifrada con AES-GCM y una clave del Android Keystore. La URL y la clave pública de Supabase se inyectan al compilar mediante `SUPABASE_URL` y `SUPABASE_ANON_KEY`; no deben escribirse en Kotlin ni subir credenciales privadas al repositorio. La clave `service_role` nunca debe estar dentro del APK.
+
+El error más peligroso del prototipo era `fallbackToDestructiveMigration()`: podía borrar el diario cuando cambiaba el esquema. Fue reemplazado por una migración Room explícita. El entorno de desarrollo también requiere Android SDK configurado mediante `ANDROID_HOME` o `local.properties`.
+
+**Importante:** el diario continúa siendo local en esta versión, pero sus filas están aisladas por `userId` y fecha. El login protege el acceso, pero aún no sincroniza registros entre dispositivos. Para habilitar sincronización real se debe implementar la API de `registros_ciclo`, ligar cada fila a `auth.uid()`, mantener RLS activa, usar bucket privado para fotos y agregar exportación y eliminación de cuenta. El SQL base está en `docs/supabase.sql` y la guía de despliegue en `docs/PRODUCCION_AUTH.md`.
+
+### Configuración rápida de desarrollo
+
+```bash
+export SUPABASE_URL=https://tu-proyecto.supabase.co
+export SUPABASE_ANON_KEY=tu-clave-publica
+./gradlew assembleDebug
+```

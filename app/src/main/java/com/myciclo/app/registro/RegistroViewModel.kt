@@ -13,19 +13,22 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-// usamos AndroidViewModel porque necesitamos el context para abrir la base de datos
-class RegistroViewModel(app: Application) : AndroidViewModel(app) {
+class RegistroViewModel @JvmOverloads constructor(
+    app: Application,
+    private val userId: String = ""
+) : AndroidViewModel(app) {
 
-    private val repository = RegistroRepository(AppDatabase.obtener(app).registroDao())
+    private val repository = RegistroRepository(
+        AppDatabase.obtener(app).registroDao(),
+        userId
+    )
 
-    // Estado para filtro por texto de notas/fecha y nivel EVA
     private val _busqueda = MutableStateFlow("")
     val busqueda: StateFlow<String> = _busqueda.asStateFlow()
 
     private val _filtroNivel = MutableStateFlow<Nivel?>(null)
     val filtroNivel: StateFlow<Nivel?> = _filtroNivel.asStateFlow()
 
-    // Historial completo filtrado en tiempo real
     val registros: StateFlow<List<RegistroEntity>> = combine(
         repository.registros,
         _busqueda,
@@ -33,8 +36,8 @@ class RegistroViewModel(app: Application) : AndroidViewModel(app) {
     ) { lista, query, nivel ->
         lista.filter { reg ->
             val coincideTexto = query.isBlank() ||
-                reg.notas.contains(query, ignoreCase = true) ||
-                reg.fecha.contains(query, ignoreCase = true)
+                    reg.notas.contains(query, ignoreCase = true) ||
+                    reg.fecha.contains(query, ignoreCase = true)
             val coincideNivel = nivel == null || reg.nivel == nivel.name
             coincideTexto && coincideNivel
         }
@@ -55,11 +58,6 @@ class RegistroViewModel(app: Application) : AndroidViewModel(app) {
         _filtroNivel.value = nivel
     }
 
-    /**
-     * Guarda o actualiza un registro convirtiendo primero las fechas a ISO estándar ("yyyy-MM-dd").
-     * Como la fecha es PrimaryKey y usamos OnConflictStrategy.REPLACE,
-     * si ya existe un registro ese día se sobrescribe (edición).
-     */
     fun guardar(
         fechaInput: String,
         inicioPeriodoInput: String,
@@ -78,9 +76,23 @@ class RegistroViewModel(app: Application) : AndroidViewModel(app) {
         val fechaIso = FechaUtils.aFormatoIso(fechaParsed)
         val inicioIso = FechaUtils.aFormatoIso(inicioParsed)
 
+        if (fechaParsed.isAfter(java.time.LocalDate.now())) {
+            _mensaje.value = "La fecha del registro no puede ser futura."
+            return
+        }
+        if (inicioParsed.isAfter(fechaParsed)) {
+            _mensaje.value = "El inicio del período no puede ser posterior al registro."
+            return
+        }
+        if (notas.length > 1000) {
+            _mensaje.value = "Las notas no pueden superar los 1000 caracteres."
+            return
+        }
+
         viewModelScope.launch {
             repository.guardar(
                 RegistroEntity(
+                    userId = userId,
                     fecha = fechaIso,
                     inicioPeriodo = inicioIso,
                     nivel = nivel.name,
@@ -92,7 +104,6 @@ class RegistroViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Borra el registro de un día concreto. */
     fun borrar(fechaInput: String) {
         val fechaIso = FechaUtils.parsear(fechaInput)?.let { FechaUtils.aFormatoIso(it) } ?: fechaInput
         viewModelScope.launch {
@@ -101,7 +112,6 @@ class RegistroViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Limpia el mensaje después de mostrarlo en la UI. */
     fun limpiarMensaje() {
         _mensaje.value = ""
     }

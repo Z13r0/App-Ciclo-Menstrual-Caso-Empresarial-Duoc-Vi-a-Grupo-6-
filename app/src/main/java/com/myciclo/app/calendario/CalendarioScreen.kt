@@ -1,5 +1,6 @@
 package com.myciclo.app.calendario
 
+import android.app.Application
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -43,9 +44,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.myciclo.app.registro.Nivel
 import com.myciclo.app.registro.RegistroEntity
@@ -63,7 +67,21 @@ private val meses = listOf(
 )
 
 @Composable
-fun CalendarioScreen(vm: CalendarioViewModel = viewModel()) {
+fun CalendarioScreen(
+    userId: String = "",
+    vm: CalendarioViewModel = run {
+        val context = LocalContext.current
+        viewModel(
+            key = "CalendarioViewModel_$userId",
+            factory = object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return CalendarioViewModel(context.applicationContext as Application, userId) as T
+                }
+            }
+        )
+    }
+) {
     val estado by vm.estado.collectAsState()
     var mes by remember { mutableStateOf(YearMonth.now()) }
     val formatoCorto = DateTimeFormatter.ofPattern("dd/MM")
