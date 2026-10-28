@@ -2,5 +2,7 @@
 <resources>
     <!-- Tema XML mínimo: la interfaz real se dibuja con Compose (MyCicloTheme) -->
     <style name="Theme.MyCiclo" parent="android:Theme.Material.Light.NoActionBar" />
-    <color name="ic_launcher_background">#8E3B6E</color>
+    <!-- fondo del icono: es el RosaPrimario de Color.kt (#B83B5E) -->
+    <!-- antes estaba en el morado viejo y ya no calzaba con la paleta rosa -->
+    <color name="ic_launcher_background">#B83B5E</color>
 </resources>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- misma figura que el foreground pero de un solo color -->
+    <!-- android 13 en adelante usa esta capa para los iconos tematicos, que se pintan
+         con el color del fondo de pantalla. el color que pongamos aca no importa,
+         el sistema lo reemplaza: lo que importa es la forma -->
+
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#000000"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:pathData="M68.9,32.7 A26,26 0 1 1 39.1,32.7" />
+
+    <path
+        android:fillColor="#000000"
+        android:pathData="M54,41 C61,49 65,53 65,57 A11,11 0 1 1 43,57 C43,53 47,49 54,41 Z" />
+</vector>

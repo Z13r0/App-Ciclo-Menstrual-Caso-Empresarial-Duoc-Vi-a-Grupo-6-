@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72" width="256" height="256">
+  <!-- logo de myciclo, mismo dibujo que ic_launcher_foreground.xml -->
+  <!-- esta version en svg es para el informe y para ver como queda sin instalar la app -->
+  <!-- el recorte muestra la zona segura del icono adaptativo, que es lo que se ve en el celular -->
+  <defs>
+    <clipPath id="forma">
+      <rect x="18" y="18" width="72" height="72" rx="18" ry="18"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#forma)">
+    <!-- fondo rosa, el RosaPrimario de la paleta -->
+    <rect x="18" y="18" width="72" height="72" fill="#B83B5E"/>
+    <!-- anillo abierto: el ciclo -->
+    <path d="M68.9,32.7 A26,26 0 1 1 39.1,32.7" fill="none" stroke="#FFD8E4" stroke-width="9" stroke-linecap="round"/>
+    <!-- gota: la muestra de saliva de eva -->
+    <path d="M54,41 C61,49 65,53 65,57 A11,11 0 1 1 43,57 C43,53 47,49 54,41 Z" fill="#FFFFFF"/>
+  </g>
+</svg>
