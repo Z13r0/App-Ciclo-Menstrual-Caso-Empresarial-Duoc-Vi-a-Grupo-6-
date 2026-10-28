@@ -100,7 +100,6 @@ com.myciclo.app/
 
 ---
 
-<<<<<<< HEAD
 ## 🌟 Funcionalidades Implementadas
 
 ### 📝 1. Registro Diario de Observaciones EVA (Integrante 1)
@@ -140,9 +139,6 @@ com.myciclo.app/
 - [ ] **Guías Favoritas:** Permitir guardar o marcar guías de interés para consulta rápida offline.
 
 ---
-
-=======
->>>>>>> 3a8e74c (Se implementan caracteristicas avanzadas, se corrigen los errores de sintaxis y crashes, se integran nuevas validaciones, sistema de favoritos, se agrega un script para generar el apk, se actualiza el sistema de busqueda, filtros por categoria y seccion de favoritos, etc.)
 ## 🔒 Privacidad y Seguridad
 
 ### Protección de Datos
