@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -317,6 +319,8 @@ private fun CardRegistro(
     onBorrar: () -> Unit
 ) {
     var confirmarBorrado by remember { mutableStateOf(false) }
+    // controla si se esta viendo la foto en grande
+    var verFoto by remember { mutableStateOf(false) }
     val nivelEnum = try { Nivel.valueOf(registro.nivel) } catch (e: Exception) { Nivel.NULO }
 
     val badgeColor = when (nivelEnum) {
@@ -338,6 +342,25 @@ private fun CardRegistro(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // miniatura de la foto del patron, solo si ese dia se guardo una
+            if (registro.foto.isNotBlank()) {
+                // remember con la ruta como llave: el archivo se lee una vez por tarjeta
+                // y no en cada vez que compose redibuja la lista
+                val miniatura = remember(registro.foto) { BitmapFactory.decodeFile(registro.foto) }
+                if (miniatura != null) {
+                    Image(
+                        bitmap = miniatura.asImageBitmap(),
+                        contentDescription = "Foto del patron",
+                        // crop para que la miniatura quede cuadrada y pareja en todas las tarjetas
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { verFoto = true }
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                }
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = registro.fecha,
@@ -389,6 +412,35 @@ private fun CardRegistro(
             },
             dismissButton = {
                 TextButton(onClick = { confirmarBorrado = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    // la foto en grande, se abre al tocar la miniatura
+    if (verFoto) {
+        val completa = remember(registro.foto) { BitmapFactory.decodeFile(registro.foto) }
+        AlertDialog(
+            onDismissRequest = { verFoto = false },
+            title = { Text("Patrón del ${registro.fecha}") },
+            text = {
+                if (completa != null) {
+                    Image(
+                        bitmap = completa.asImageBitmap(),
+                        contentDescription = "Foto del patron en grande",
+                        // aca va Fit y no Crop: hay que ver el patron completo,
+                        // si lo recortamos se puede perder justo la parte del helecho
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(320.dp)
+                    )
+                } else {
+                    // pasa si se borro el archivo de la carpeta de la app
+                    Text("No se pudo abrir la foto")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { verFoto = false }) { Text("Cerrar") }
             }
         )
     }

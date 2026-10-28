@@ -81,7 +81,7 @@ com.myciclo.app/
 
 ### 📝 Integrante 1 - Módulo Registro
 - [ ] **Integración de `FechaUtils` en Formulario:** Aplicar `FechaUtils.esValida()` y `FechaUtils.parsear()` en `RegistroScreen` para validar la entrada y guardar en formato ISO estándar (`yyyy-MM-dd`) en Room.
-- [ ] **Visor de Foto Ampliada:** Permitir hacer clic en la imagen dentro de la tarjeta del historial para verla a pantalla completa.
+- [x] **Visor de Foto Ampliada:** ✅ Completado - La tarjeta del historial muestra una miniatura de la foto del patrón y al tocarla se abre ampliada. La miniatura usa `ContentScale.Crop` para que todas queden parejas, y la vista ampliada usa `ContentScale.Fit` para no recortar el patrón de helecho.
 - [ ] **Filtro / Búsqueda en Historial:** Filtrar registros por nivel de observación EVA (Nulo, Bajo, Medio, Alto) o por texto libre en notas.
 
 ### 📅 Integrante 2 - Módulo Calendario
