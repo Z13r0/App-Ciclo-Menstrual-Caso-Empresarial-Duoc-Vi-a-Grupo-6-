@@ -59,6 +59,11 @@ Organizado por módulos funcionales para mantenibilidad y colaboración:
 ```
 com.myciclo.app/
 ├── MainActivity.kt                          # Punto de entrada, permisos runtime
+├── auth/                                    # Autenticación con Supabase
+│   ├── AuthApi.kt                           # Llamadas a Supabase Auth
+│   ├── AuthRepository.kt                    # Sesión, login, recuperación
+│   ├── AuthScreen.kt                        # Pantalla de inicio de sesión
+│   └── SecureSessionStore.kt                # Sesión cifrada con AES-GCM
 ├── navegacion/                              # Navegación y rutas
 │   ├── Screen.kt                            # Rutas de navegación
 │   └── AppNavegacion.kt                     # Barra de navegación inferior
@@ -96,47 +101,70 @@ com.myciclo.app/
     ├── FavoritasPreferences.kt             # Persistencia de favoritas
     ├── SupabaseApi.kt                      # API Supabase (opcional)
     └── SupabaseConfig.kt                    # Configuración Supabase
+
+app/src/test/java/com/myciclo/app/
+└── calendario/                              # Pruebas unitarias con JUnit
+    ├── VentanaFertilTest.kt                 # Cálculo de la ventana fértil
+    └── FaseCicloTest.kt                     # Día y fase del ciclo
 ```
 
 ---
 
 ## 🌟 Funcionalidades Implementadas
 
-### 📝 1. Registro Diario de Observaciones EVA (Integrante 1)
+### 📝 1. Registro Diario de Observaciones EVA — Benjamín Navarrete
 - **Formulario Completo:** Registro de fecha, día de inicio del período, nivel de cristalización EVA observado y notas opcionales.
 - **Captura de Fotografías:** Integración nativa con cámara (`TakePicture`) o galería (`GetContent`). Las imágenes se almacenan exclusivamente en el almacenamiento interno privado del dispositivo.
 - **Historial Interactivo:** Lista de observaciones pasadas con soporte para **edición** y **eliminación** con diálogo de confirmación.
 
-### 📅 2. Calendario y Ventana Fértil EVA (Integrante 2)
+### 📅 2. Calendario y Ventana Fértil EVA — Sebastián Cerda
 - **Vista Mensual Interactiva:** Muestra cada día con código de color según el nivel EVA registrado.
 - **Ventana Fértil Personalizada:** Aplica la regla del método EVA (ventana fértil activa desde el primer día con patrón de helecho hasta 8 días posteriores).
 - **Identificación de Fase del Ciclo:** Determina automáticamente la fase actual (*Menstruación*, *Fase Folicular*, *Ventana EVA*, *Fase Lútea*).
 - **Promedio de Duración del Ciclo:** Calcula la duración promedio en días basándose en los registros de inicio de período de meses anteriores.
 - **Detalle de Día:** Al presionar un día se despliega un diálogo con las notas, patrón observado y foto adjunta.
 
-### 📚 3. Guías Educativas y Notificaciones (Integrante 3)
+### 📚 3. Guías Educativas y Notificaciones — Ignacio Vera (guías) y Sebastián Cerda (notificaciones)
 - **Contenido Educativo:** Muestra guías sobre el uso del dispositivo EVA, interpretación de patrones, higiene y privacidad.
 - **Conexión API REST & Fallback:** Pide el contenido a la API en Spring Boot (`GET /api/guias`). Si el servidor o la red no están disponibles, carga automáticamente las guías locales sin interrumpir a la usuaria.
 - **Recordatorios Diarios Locales:** Alerta diaria programada a las **09:00 AM** mediante `AlarmManager` y `NotificationChannel`, solicitando los permisos adecuados en Android 13+.
 
 ---
 
-## 📌 Tareas Pendientes y Próximos Pasos (Roadmap del Grupo)
+## 🗂️ Planificación del equipo
 
-### 📝 Integrante 1 - Módulo Registro
-- [ ] **Integración de `FechaUtils` en Formulario:** Aplicar `FechaUtils.esValida()` y `FechaUtils.parsear()` en `RegistroScreen` para validar la entrada y guardar en formato ISO estándar (`yyyy-MM-dd`) en Room.
-- [x] **Visor de Foto Ampliada:** ✅ Completado - La tarjeta del historial muestra una miniatura de la foto del patrón y al tocarla se abre ampliada. La miniatura usa `ContentScale.Crop` para que todas queden parejas, y la vista ampliada usa `ContentScale.Fit` para no recortar el patrón de helecho.
-- [ ] **Filtro / Búsqueda en Historial:** Filtrar registros por nivel de observación EVA (Nulo, Bajo, Medio, Alto) o por texto libre en notas.
+La distribución de tareas y su avance están en el tablero del grupo:
 
-### 📅 Integrante 2 - Módulo Calendario
-- [x] **Navegación entre Meses:** ✅ Completado - Controles de navegación (mes anterior / mes siguiente) ya implementados en `CalendarioScreen`.
-- [x] **Parseo Seguro con `FechaUtils`:** ✅ Completado - `FechaUtils.parsear(...)` ya se usa en `CalendarioViewModel`.
-- [ ] **Indicadores de Regularidad:** Añadir resumen visual del historial de ciclos (variación en días entre períodos).
+**Trello:** _(pegar aquí el enlace del tablero)_
 
-### 📚 Integrante 3 - Módulo Contenido & Notificaciones
-- [ ] **Búsqueda y Filtro de Guías:** Agregar barra de búsqueda y filtros por categoría (Manual, Educación, Preguntas Frecuentes) en `ContenidoScreen`.
-- [ ] **Ajustes de Notificaciones:** Crear pantalla de configuración para activar/desactivar la alarma o ajustar la hora del recordatorio diario (actualmente fija a las 09:00 AM).
-- [ ] **Guías Favoritas:** Permitir guardar o marcar guías de interés para consulta rápida offline.
+Cada tarjeta indica el integrante responsable y la carpeta del proyecto que toca. El reparto es el mismo
+que aparece más abajo: registro para Benjamín, calendario para Sebastián, y contenido educativo y
+notificaciones para Ignacio y Sebastián.
+
+---
+
+## 📌 Estado de las tareas del grupo
+
+### 📝 Benjamín Navarrete - Módulo Registro
+- [x] **Integración de `FechaUtils` en Formulario:** `RegistroScreen` valida con `FechaUtils.esValida()` y guarda en formato ISO (`yyyy-MM-dd`) en Room.
+- [x] **Visor de Foto Ampliada:** la tarjeta del historial muestra una miniatura con `ContentScale.Crop` y al tocarla se abre ampliada con `ContentScale.Fit`, para no recortar el patrón.
+- [x] **Filtro / Búsqueda en Historial:** filtrado por nivel de observación EVA desde el ViewModel (`filtroNivel`).
+
+### 📅 Sebastián Cerda - Módulo Calendario
+- [x] **Navegación entre Meses:** controles de mes anterior y siguiente en `CalendarioScreen`.
+- [x] **Parseo Seguro con `FechaUtils`:** `FechaUtils.parsear(...)` en `CalendarioViewModel`.
+- [x] **Indicadores de Regularidad:** se calcula el ciclo promedio y la variación en días, y se muestran en la cabecera del calendario.
+
+### 📚 Ignacio Vera - Módulo Contenido & Notificaciones
+- [x] **Búsqueda y Filtro de Guías:** barra de búsqueda en tiempo real y filtros por categoría, combinados con `combine` en `ContenidoViewModel`.
+- [x] **Ajustes de Notificaciones:** `AjustesScreen` permite cambiar la hora del recordatorio o desactivarlo, y la preferencia se guarda.
+- [x] **Guías Favoritas:** marcado de favoritas persistente mediante `FavoritasPreferences`.
+
+### 🔭 Próximos pasos
+- [ ] Llevar la autenticación y los ajustes al mismo patrón MVVM que el resto: hoy esas pantallas hablan directo con el repositorio y con las preferencias.
+- [ ] Completar el modo oscuro: las barras superior e inferior todavía usan colores fijos en vez de los del tema.
+- [ ] Ampliar las pruebas unitarias a los módulos de registro y contenido (hoy cubren el cálculo del ciclo).
+- [ ] Sincronizar los registros con el servidor para que el diario viaje entre dispositivos.
 
 ---
 ## 🔒 Privacidad y Seguridad
@@ -259,9 +287,10 @@ Genera el APK firmado en modo release con verificación de firma.
 - Guardar copia de seguridad del keystore: si se pierde, no se puede volver a firmar con la misma llave
 
 ### Configuración de Java
-- El proyecto usa Java 21 por defecto (configurado en `gradle.properties`)
-- Si tu Java por defecto no es compatible, configura en tu gradle personal: `~/.gradle/gradle.properties`
-- NO modificar `gradle.properties` del proyecto (rompe el build de otros desarrolladores)
+- El proyecto compila con cualquier JDK entre la 17 y la 22. Con Java 25 el compilador de Kotlin 2.0.21 falla.
+- El `gradle.properties` del repositorio NO fija ninguna ruta de Java a propósito: la ruta cambia en cada computador.
+- Si tu Java por defecto no sirve, apunta al correcto en tu gradle personal (`~/.gradle/gradle.properties`) con `org.gradle.java.home`.
+- NO agregues esa línea al `gradle.properties` del proyecto: le rompe el build a los demás.
 
 ### Lint
 - Lint está deshabilitado en build para evitar problemas de file lock en Windows
@@ -291,7 +320,7 @@ La sesión se guarda cifrada con AES-GCM y una clave del Android Keystore. La UR
 
 El error más peligroso del prototipo era `fallbackToDestructiveMigration()`: podía borrar el diario cuando cambiaba el esquema. Fue reemplazado por una migración Room explícita. El entorno de desarrollo también requiere Android SDK configurado mediante `ANDROID_HOME` o `local.properties`.
 
-**Importante:** el diario continúa siendo local en esta versión, pero sus filas están aisladas por `userId` y fecha. El login protege el acceso, pero aún no sincroniza registros entre dispositivos. Para habilitar sincronización real se debe implementar la API de `registros_ciclo`, ligar cada fila a `auth.uid()`, mantener RLS activa, usar bucket privado para fotos y agregar exportación y eliminación de cuenta. El SQL base está en `docs/supabase.sql` y la guía de despliegue en `docs/PRODUCCION_AUTH.md`.
+**Importante:** el diario continúa siendo local en esta versión, pero sus filas están aisladas por `userId` y fecha. El login protege el acceso, pero aún no sincroniza registros entre dispositivos. Para habilitar sincronización real se debe implementar la API de `registros_ciclo`, ligar cada fila a `auth.uid()`, mantener RLS activa, usar bucket privado para fotos y agregar exportación y eliminación de cuenta. El SQL base está en `docs/supabase.sql` y la guía de despliegue en `docs/Configuracion de autenticacion para produccion.md`.
 
 ### Configuración rápida de desarrollo
 
