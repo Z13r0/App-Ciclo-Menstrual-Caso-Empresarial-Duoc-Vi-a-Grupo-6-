@@ -2,16 +2,19 @@ package com.myciclo.app.contenido
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -65,9 +68,14 @@ fun ContenidoScreen(vm: ContenidoViewModel = viewModel()) {
 
     val categoriasEstaticas = listOf("Manual", "Educación", "Preguntas frecuentes")
 
+    // la fila de filtros no cabe a lo ancho del telefono, asi que la dejamos
+    // deslizable en horizontal. sin esto el ultimo chip queda aplastado, su texto
+    // se parte en muchas lineas y estira la fila tapando las guias
+    val scrollFiltros = rememberScrollState()
+
     Column(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -111,7 +119,12 @@ fun ContenidoScreen(vm: ContenidoViewModel = viewModel()) {
         )
 
         // Filtros por Categoría y Sección Favoritas usando FilterChips
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(scrollFiltros),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             FilterChip(
                 selected = categoriaFiltro == null && !soloFavoritas,
                 onClick = {
@@ -192,7 +205,12 @@ fun ContenidoScreen(vm: ContenidoViewModel = viewModel()) {
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
                 } else {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // weight deja que la lista use todo el alto que sobra, asi se
+                    // puede bajar hasta la ultima guia sin que la tape la barra
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         items(e.guias, key = { it.id }) { guia ->
                             val esFav = favoritasIds.contains(guia.id)
                             TarjetaGuia(

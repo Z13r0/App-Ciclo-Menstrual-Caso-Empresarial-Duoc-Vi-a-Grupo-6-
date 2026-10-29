@@ -23,6 +23,7 @@ import com.myciclo.app.auth.AuthRepository
 import com.myciclo.app.auth.AuthScreen
 import com.myciclo.app.navegacion.AppNavegacion
 import com.myciclo.app.notificaciones.NotificacionHelper
+import com.myciclo.app.registro.RegistroDao
 import com.myciclo.app.ui.theme.FondoFresco
 import com.myciclo.app.ui.theme.MyCicloTheme
 import com.myciclo.app.ui.theme.RosaPrimario
@@ -63,6 +64,20 @@ class MainActivity : ComponentActivity() {
 
         // Intentamos renovar la sesión con el refresh_token guardado
         lifecycleScope.launch {
+            // si no hay supabase configurado la app entra en modo local en vez de
+            // quedarse pegada en el login: el diario igual funciona porque se guarda
+            // en room, que es lo que pide el caso. cuando se definan SUPABASE_URL y
+            // SUPABASE_ANON_KEY al compilar, el inicio de sesion vuelve solo.
+            if (!hayAuthConfigurada()) {
+                // usamos el mismo id que la migracion, asi estos registros quedan
+                // listos para que claimLegacyRecordsIfNeeded los reclame el dia que
+                // alguien inicie sesion de verdad
+                userId.value = RegistroDao.LEGACY_USER_ID
+                autenticado.value = true
+                cargandoSesion.value = false
+                return@launch
+            }
+
             val sesionValida = auth.restoreSession()
             // Solo consideramos autenticada si hay sesión Y no estamos en medio de un recovery
             autenticado.value = sesionValida && !restableciendoPassword.value
@@ -101,8 +116,13 @@ class MainActivity : ComponentActivity() {
                             onLogout = {
                                 lifecycleScope.launch {
                                     auth.logout()
-                                    autenticado.value = false
-                                    userId.value = null
+                                    // en modo local no hay sesion que cerrar: si dejaramos
+                                    // autenticado en false la app se iria al login y ya no
+                                    // se podria volver a entrar
+                                    if (hayAuthConfigurada()) {
+                                        autenticado.value = false
+                                        userId.value = null
+                                    }
                                 }
                             }
                         )
@@ -141,6 +161,14 @@ class MainActivity : ComponentActivity() {
             autenticado.value = userId.value != null && !restableciendoPassword.value
         }
     }
+
+    /**
+     * Dice si la autenticacion esta lista para usarse.
+     * Las dos llaves entran al compilar como buildConfigField, asi que si vienen
+     * vacias no hay servidor contra el cual iniciar sesion.
+     */
+    private fun hayAuthConfigurada(): Boolean =
+        BuildConfig.SUPABASE_URL.isNotBlank() && BuildConfig.SUPABASE_ANON_KEY.isNotBlank()
 
     /**
      * Pide el permiso de notificaciones si es necesario y programa el recordatorio diario.
