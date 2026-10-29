@@ -137,6 +137,8 @@ La distribución de tareas y su avance están en el tablero del grupo:
 
 **Tablero del equipo (Notion):** https://app.notion.com/p/a8743e87c537413c9450b2b77d31cd80
 
+Copia versionada del tablero: [`docs/PLANIFICACION.md`](docs/PLANIFICACION.md)
+
 52 tarjetas repartidas entre los tres integrantes, agrupadas en Backlog, Por hacer, En curso y Hecho, y etiquetadas por módulo del proyecto.
 
 Cada tarjeta indica el integrante responsable y la carpeta del proyecto que toca. El reparto es el mismo
